@@ -1,0 +1,3 @@
+# Cloudflare Pages: clean per-school URLs, e.g. school.greenolasa.com/bls
+/:slug/  /:slug       301
+/:slug   /?s=:slug    200

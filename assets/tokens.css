@@ -1,0 +1,28 @@
+/* Greenola — design tokens (subset used by the school ordering link) */
+@font-face{font-family:Cairo;src:url(fonts/Cairo-Regular.woff2) format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:Cairo;src:url(fonts/Cairo-Bold.woff2) format('woff2');font-weight:700;font-display:swap}
+@font-face{font-family:Cairo;src:url(fonts/Cairo-Black.woff2) format('woff2');font-weight:900;font-display:swap}
+
+:root{
+  /* Tier 1 — core brand */
+  --green-primary:#24B25D; --green-dark:#004E42; --green-medium:#17765D;
+  --gold:#EDB02C; --orange:#EE7D46; --cream:#FFFEDC;
+  /* Tier 3 — backgrounds */
+  --bg-white:#FFFFFF; --bg-bone:#FAF8EE; --bg-paper:#F4F4EE;
+  /* Tier 4 — accents */
+  --green-wash:#EAF7F0; --green-soft:#D6F0E1; --green-700:#1B8546;
+  --ink-500:#5E6F69; --ink-400:#8A9994;
+  /* spacing */
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s7:32px; --s8:40px; --s9:48px;
+  /* radius */
+  --r-xs:4px; --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:24px; --r-pill:999px;
+  /* shadows — warm, dark-green based. never rgba(0,0,0,x) */
+  --sh-xs:0 1px 2px rgba(0,78,66,.04);
+  --sh-sm:0 2px 8px rgba(0,78,66,.06);
+  --sh-md:0 4px 16px rgba(0,78,66,.10);
+  --sh-lg:0 8px 24px rgba(0,78,66,.14);
+  --sh-xl:0 12px 32px rgba(0,78,66,.18);
+  --sh-bar:0 -4px 16px rgba(0,78,66,.08);
+  --sh-sheet:0 -8px 24px rgba(0,78,66,.12);
+  --container:430px;
+}

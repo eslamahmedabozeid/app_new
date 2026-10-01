@@ -1,0 +1,2245 @@
+<!doctype html>
+<html lang="ar" dir="rtl" id="root">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>جرينولا · وجبات المدارس</title>
+<script>
+/* start the school logo (deterministic storage path) and the last-seen hero downloading before anything else */
+(function(){try{
+  var q=new URLSearchParams(location.search).get('s'),seg=location.pathname.split('/').filter(Boolean);
+  var sl=((q||(/^https?:$/.test(location.protocol)&&seg.length===1?decodeURIComponent(seg[0]):'')||'')+'').toLowerCase();
+  if(!/^[a-z0-9-]{2,32}$/.test(sl)||['index.html','assets','app','admin','api'].indexOf(sl)>=0)return;
+  var pre=function(u){var l=document.createElement('link');l.rel='preload';l.as='image';l.href=u;document.head.appendChild(l);};
+  pre('https://jmtqldgovmmhaystvpdu.supabase.co/storage/v1/object/public/school-menu/'+sl+'/logo.png');
+  var h=null;try{h=localStorage.getItem('hero:'+sl);}catch(e){}
+  pre(h&&/^https:\/\//.test(h)?h:'https://jmtqldgovmmhaystvpdu.supabase.co/storage/v1/object/public/school-menu/'+sl+'/hero.png');
+}catch(e){}})();
+</script>
+<link rel="stylesheet" href="assets/tokens.css">
+<link rel="stylesheet" href="assets/payment.css">
+<script src="assets/school-orders-api.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lucide@0.454.0/dist/umd/lucide.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow-x:hidden}
+body{font-family:Cairo,sans-serif;background:var(--bg-paper);color:var(--green-dark);
+     -webkit-font-smoothing:antialiased;display:flex;justify-content:center}
+.app{width:100%;max-width:var(--container);background:var(--bg-bone);height:100dvh;display:flex;
+     flex-direction:column;position:relative;overflow:hidden;box-shadow:var(--sh-md)}
+
+/* ---------- brand bar ---------- */
+.brandbar{flex:none;background:var(--bg-white);padding:14px 20px;display:flex;align-items:center;
+          justify-content:space-between;border-bottom:1px solid rgba(0,78,66,.06);position:relative;z-index:50}
+.brandbar img.g{height:30px}
+.brandbar img.s{height:42px}
+
+/* ---------- typography ---------- */
+h1{font:700 26px/1.2 Cairo;letter-spacing:-.015em}
+h2{font:700 20px/1.25 Cairo}
+h3{font:600 16px/1.3 Cairo}
+.body{font:400 14px/1.55 Cairo}
+.cap{font:400 13px/1.5 Cairo;color:var(--ink-500)}
+.muted{color:var(--ink-500)}
+
+/* ---------- screen ---------- */
+.screen{display:none;flex:1;min-height:0;overflow-y:auto;padding:var(--s7) var(--s4) 150px}
+.screen.on{display:block}
+.screen.hero-screen.on{display:flex;flex-direction:column;overflow:hidden}
+.screen.hero-screen{padding:0}
+.steps{display:flex;gap:6px;padding:0 var(--s4);margin-top:var(--s4)}
+.steps i{height:3px;flex:1;border-radius:var(--r-pill);background:rgba(0,78,66,.12)}
+.steps i.done{background:var(--green-primary)}
+.back{display:inline-flex;align-items:center;gap:6px;background:none;border:0;cursor:pointer;
+      font:600 14px Cairo;color:var(--green-medium);padding:var(--s2) 0;margin-bottom:var(--s2)}
+
+/* ---------- hero (intro) — one screen, never scrolls ---------- */
+.hero{flex:1;min-height:0;background:var(--green-primary);position:relative;overflow:hidden;
+      display:flex;flex-direction:column;padding:clamp(18px,4vh,34px) var(--s4) 0}
+.hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:52%;z-index:1;pointer-events:none;
+             background:linear-gradient(to bottom,rgba(250,248,238,0) 0%,rgba(250,248,238,.35) 38%,rgba(250,248,238,.80) 66%,var(--bg-bone) 88%)}
+.hero .wm{position:absolute;inset-inline-end:-46px;top:-34px;width:190px;opacity:.13;pointer-events:none}
+.toprow{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
+.hero .lang{flex:none;border:1.5px solid rgba(255,254,220,.45);background:transparent;color:var(--cream);
+            font:700 11px Cairo;border-radius:var(--r-pill);padding:6px 12px;cursor:pointer}
+.hero .htxt{position:relative;z-index:3;flex:none}
+.hero h1{color:var(--cream);font-size:clamp(28px,8.2vw,40px);line-height:1.2;letter-spacing:-.015em;
+         margin-top:clamp(8px,1.6vh,14px)}
+.hero p{color:var(--cream);opacity:.92;font:400 clamp(13px,3.6vw,15px)/1.65 Cairo;margin-top:10px;max-width:22em}
+.hero .tag{display:inline-block;background:var(--gold);color:var(--cream);font:700 11px Cairo;
+           border-radius:var(--r-pill);padding:6px 13px}
+.mini{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:clamp(8px,1.6vh,14px)}
+.mini span{color:var(--cream);opacity:.9;font:600 11.5px Cairo;display:flex;align-items:center}
+.mini span::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--gold);
+                   margin-inline-end:6px;flex:none}
+.shotwrap{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
+          gap:clamp(8px,1.6vh,14px);margin:clamp(6px,1.4vh,14px) 0 0;padding-bottom:100px;position:relative;z-index:2}
+.shotcap{color:var(--green-dark);font:600 13px/1.5 Cairo;text-align:center;flex:none}
+.hero .shot{max-width:min(86%,320px);min-height:0;flex:1;width:auto;object-fit:contain;object-position:bottom;
+            transform:translateX(-16px);
+            filter:drop-shadow(0 10px 22px rgba(0,60,40,.30))}
+
+/* benefits — compact 2x2 */
+.facts{padding:var(--s6) var(--s4) 0;display:grid;grid-template-columns:1fr 1fr;gap:var(--s3)}
+.fact{background:var(--bg-white);border-radius:var(--r-md);padding:var(--s4);box-shadow:var(--sh-sm);
+      border:1px solid rgba(0,78,66,.04)}
+.fact .ic{width:36px;height:36px;border-radius:var(--r-pill);background:var(--green-wash);
+          display:grid;place-items:center;color:var(--green-primary);margin-bottom:10px}
+.fact b{font:700 14px/1.35 Cairo;display:block;margin-bottom:3px}
+.fact span{font:400 12px/1.5 Cairo;color:var(--ink-500)}
+.slogan{text-align:center;padding:var(--s7) var(--s4) 0;font:700 18px Cairo;color:var(--green-primary)}
+
+/* ---------- forms ---------- */
+.field{margin-bottom:var(--s5)}
+.field label{display:block;font:400 14px Cairo;color:rgba(0,78,66,.70);margin-bottom:var(--s2)}
+.field .req{color:var(--orange)}
+input[type=text],input[type=tel],select{
+  width:100%;background:var(--bg-white);border:1.5px solid rgba(0,78,66,.12);border-radius:var(--r-sm);
+  padding:13px var(--s4);font:400 16px Cairo;color:var(--green-dark);outline:none;
+  transition:border-color .2s ease-out}
+input::placeholder{color:var(--ink-400)}
+input:focus,select:focus{border:2px solid var(--green-primary);padding:12px 15px}
+.err input,.err select{border:2px solid var(--orange);padding:12px 15px}
+.errmsg{display:none;font:400 12px Cairo;color:var(--orange);margin-top:6px}
+.err .errmsg{display:block}
+.fnote{display:flex;align-items:center;gap:6px;font:600 12px Cairo;color:var(--orange);margin-top:6px}
+.fnote i{flex:none;color:var(--orange)}
+.err .fnote{color:#C4361D;font-weight:700}
+.err .fnote i{color:#C4361D}
+.minerr{font:600 12px/1.6 Cairo;color:var(--orange);text-align:center;margin:0 0 10px}
+.minerr:empty{display:none}
+.phone{display:flex;gap:var(--s2);direction:ltr}
+.phone .cc{background:var(--green-primary);color:var(--cream);font:700 16px Cairo;border-radius:var(--r-sm);
+           padding:13px var(--s4);display:grid;place-items:center;flex:none}
+.phone input{flex:1;text-align:left;direction:ltr}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23004E42' stroke-width='2'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+       background-repeat:no-repeat;background-position:left 16px center}
+
+/* ---------- buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);cursor:pointer;
+     border:0;font:700 16px Cairo;letter-spacing:-.01em;border-radius:var(--r-md);padding:16px var(--s7);
+     transition:box-shadow .2s ease-out,transform .2s ease-out,filter .2s ease-out}
+.btn-primary{background:var(--green-primary);color:var(--cream);box-shadow:var(--sh-sm)}
+.btn-primary:hover{filter:brightness(.95);box-shadow:var(--sh-md)}
+.btn-primary:active{transform:translateY(1px)}
+.btn-primary:disabled{opacity:.4}
+.btn-outline{background:transparent;border:2px solid var(--green-primary);color:var(--green-primary);padding:14px var(--s7)}
+.btn-outline:hover{background:var(--green-soft)}
+.btn-ghost{background:transparent;color:var(--green-medium);font:600 14px Cairo;padding:var(--s3) 0}
+.btn-block{width:100%}
+
+/* ---------- sticky bottom bar ---------- */
+.bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:var(--container);background:var(--bg-white);
+     padding:var(--s4);box-shadow:var(--sh-bar);border-radius:var(--r-md) var(--r-md) 0 0;z-index:100}
+.bar-ghost{background:transparent;box-shadow:none;border-radius:0}
+.bar .sum{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:var(--s3)}
+.bar .sum b{font:900 26px Cairo;font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:4px}
+.bar .sum b i{font:700 14px Cairo;font-style:normal;color:var(--ink-500)}
+.bar .sum span{font:400 13px Cairo;color:var(--ink-500)}
+
+/* ---------- cards / chips ---------- */
+.card{background:var(--bg-white);border-radius:var(--r-md);box-shadow:var(--sh-sm);padding:var(--s4);margin-bottom:var(--s3)}
+.chiprow{display:flex;flex-wrap:wrap;gap:var(--s2)}
+.chip{border:1.5px solid rgba(0,78,66,.30);background:var(--bg-white);color:var(--green-dark);
+      font:600 14px Cairo;border-radius:var(--r-pill);padding:12px 18px;cursor:pointer;
+      transition:background .2s ease-out,border-color .2s ease-out;min-height:48px;display:flex;
+      flex-direction:column;align-items:center;justify-content:center;line-height:1.2}
+.chip small{font:400 11px Cairo;color:var(--ink-500);margin-top:2px}
+.chip.sel{background:var(--green-primary);color:var(--cream);border-color:var(--green-primary)}
+.chip.sel small{color:var(--cream);opacity:.85}
+.chip:disabled{opacity:.3;cursor:not-allowed}
+
+.mealrow{background:var(--bg-white);border-radius:var(--r-md);box-shadow:var(--sh-sm);padding:var(--s4);
+         margin-bottom:var(--s3);display:flex;align-items:center;gap:var(--s3);cursor:pointer;
+         border:1px solid rgba(0,78,66,.04)}
+.mealrow .who b{font:700 15px Cairo;display:block}
+.mealrow .who span{font:400 13px Cairo;color:var(--ink-500)}
+.mealrow .who em{font:600 13px Cairo;color:var(--green-primary);font-style:normal}
+.mealrow .grow{flex:1}
+.mealrow .pill{background:var(--green-wash);color:var(--green-medium);font:600 12px Cairo;
+               border-radius:var(--r-pill);padding:6px 12px;white-space:nowrap}
+.mealrow.done .pill{background:var(--green-primary);color:var(--cream)}
+
+/* ---------- assignment summary under the day ---------- */
+.asg{margin-bottom:12px}
+.asgrow{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--green-wash);
+        border-radius:var(--r-sm);padding:9px 12px;margin-bottom:6px}
+.asgrow b{font:700 13px Cairo;color:var(--green-dark);display:block}
+.asgrow span{font:400 11.5px/1.5 Cairo;color:var(--green-medium)}
+.asgrow .clear{border:0;background:none;color:var(--orange);font:600 12px Cairo;cursor:pointer;padding:4px;flex:none}
+.asgempty{font:400 12px Cairo;color:var(--ink-500);margin-bottom:12px}
+
+/* ---- who-for rows inside the sheet ---- */
+.whorow{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg-white);
+        border:1.5px solid rgba(0,78,66,.08);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:8px}
+.whorow.on{border:2px solid var(--green-primary);background:var(--green-wash);padding:8.5px 10.5px}
+.whorow .wn b{font:700 14px Cairo;display:block}
+.whorow .wn span{font:400 11px Cairo;color:var(--ink-500)}
+
+/* ---- compact add-on row ---- */
+.oa{display:flex;align-items:center;gap:11px;padding:10px;border-radius:var(--r-sm);cursor:pointer;
+    border:1.5px solid rgba(0,78,66,.08);margin-bottom:8px;background:var(--bg-bone)}
+.oa.sel{border:2px solid var(--green-primary);padding:8.5px;background:var(--green-wash)}
+.oa .nm{flex:1;min-width:0}
+.oa .nm b{font:600 13.5px Cairo;display:block}
+.oa .nm small{font:400 11px Cairo;color:var(--ink-500)}
+.qbadge{width:34px;height:34px;border-radius:50%;background:var(--green-primary);color:var(--cream);
+        font:700 14px Cairo;display:grid;place-items:center;flex:none}
+
+/* ---------- dish detail sheet ---------- */
+.backdrop{position:fixed;inset:0;background:rgba(0,78,66,.45);display:none;z-index:1000}
+.backdrop.on{display:block}
+.dsheet{position:fixed;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;
+        max-width:var(--container);background:var(--bg-bone);border-radius:var(--r-lg) var(--r-lg) 0 0;
+        box-shadow:0 -8px 24px rgba(0,78,66,.12);max-height:92vh;overflow-y:auto;z-index:1001;
+        transition:transform .28s cubic-bezier(.22,.61,.36,1)}
+.dsheet.on{transform:translateX(-50%) translateY(0)}
+.dsheet .dimg{width:100%;aspect-ratio:16/10;object-fit:cover;object-position:center;display:block;
+              border-radius:var(--r-lg) var(--r-lg) 0 0;background:var(--bg-white)}
+.dsheet .dx{position:absolute;top:12px;inset-inline-start:12px;width:34px;height:34px;border-radius:50%;
+            background:rgba(0,78,66,.55);color:var(--cream);border:0;font:700 17px Cairo;cursor:pointer;z-index:2}
+.dwrap{position:relative}
+.dbody{padding:var(--s5) var(--s4) var(--s6)}
+.dbody h2{font:700 20px/1.3 Cairo;margin-bottom:5px}
+.dbody .dd{font:400 13px/1.6 Cairo;color:var(--ink-500);margin-bottom:var(--s5)}
+.dsec{font:700 12px Cairo;color:var(--green-medium);margin:0 0 9px}
+.macs.big{max-width:none;gap:6px;margin-bottom:var(--s6)}
+.macs.big .mc b{font:700 14px Cairo;padding:7px 0}
+.macs.big .mc span{font:400 10.5px Cairo;margin-top:4px}
+.alglist{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:var(--s5)}
+.alglist span{background:rgba(238,125,70,.12);color:#C2551F;font:600 12px Cairo;
+              border-radius:var(--r-pill);padding:7px 13px;border:1px solid rgba(238,125,70,.28)}
+.algnote{font:400 11px/1.6 Cairo;color:var(--ink-500);margin-bottom:var(--s6)}
+
+/* ---------- sticky day header ---------- */
+.dayfix{position:sticky;top:0;z-index:20;background:var(--bg-bone);margin:0 -16px 10px;padding:4px 16px 6px;
+        box-shadow:0 8px 10px -9px rgba(0,78,66,.30)}
+.dayfix .dayhead{margin:2px 0 0}
+.dayfix .dayhead h2{font:700 19px Cairo;color:var(--green-dark)}
+.kidblock{padding:0;overflow:visible}
+.kidname{position:sticky;top:var(--dayfixh,150px);z-index:15;width:100%;background:var(--bg-white);
+         display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px;
+         border:0;border-radius:var(--r-md);cursor:pointer;text-align:start;font-family:Cairo}
+.kidblock.open .kidname{border-radius:var(--r-md) var(--r-md) 0 0;
+         box-shadow:0 6px 8px -8px rgba(0,78,66,.25);border-bottom:1px solid rgba(0,78,66,.07)}
+.kn{flex:1;min-width:0}
+.kn b{font:700 15px Cairo;color:var(--green-dark);display:block}
+.kn b span{font:400 12px Cairo;color:var(--ink-500)}
+.kn small{display:block;font:400 11.5px/1.5 Cairo;color:var(--ink-400);margin-top:2px;
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kn small.has{color:var(--green-medium);font-weight:600}
+.knr{display:flex;align-items:center;gap:8px;flex:none;color:var(--green-medium)}
+.kt2{background:var(--green-wash);color:var(--green-medium);font:700 12px Cairo;
+     border-radius:var(--r-pill);padding:5px 11px;font-variant-numeric:tabular-nums}
+.kidrow{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+        background:var(--bg-white);border:1.5px solid rgba(0,78,66,.06);border-radius:var(--r-md);
+        padding:14px;margin-bottom:10px;cursor:pointer;text-align:start;font-family:Cairo;box-shadow:var(--sh-sm);
+        transition:box-shadow .2s ease-out,transform .2s ease-out}
+.kidrow:hover{box-shadow:var(--sh-md);transform:translateY(-1px)}
+.kidrow.has{border-color:rgba(36,178,93,.35);background:var(--green-wash)}
+.kgo{background:var(--green-primary);color:var(--cream);font:700 12px Cairo;border-radius:var(--r-pill);padding:6px 13px}
+.mhead{position:sticky;top:0;z-index:3;background:var(--bg-bone);display:flex;align-items:center;
+       justify-content:space-between;gap:10px;padding:16px 16px 12px;border-bottom:1px solid rgba(0,78,66,.07);
+       border-radius:var(--r-lg) var(--r-lg) 0 0}
+.mhead b{display:block;font:700 18px Cairo;color:var(--green-dark)}
+.mhead small{display:block;font:400 12px Cairo;color:var(--ink-500);margin-top:2px}
+#mbody{padding:14px 16px 8px}
+.mfoot{position:sticky;bottom:0;background:var(--bg-bone);padding:10px 16px 16px;
+       box-shadow:0 -6px 12px -8px rgba(0,78,66,.18)}
+.kidname.solo{cursor:default}
+.kbody{padding:13px}
+.cl2{display:block;margin:6px auto 0;border:0;background:none;color:var(--orange);font:600 12.5px Cairo;cursor:pointer;padding:6px 10px}
+.kidname b{font:700 15px Cairo}
+.kidname span{font:400 12px Cairo;color:var(--ink-500)}
+.kidname .clear{border:0;background:none;color:var(--orange);font:600 12px Cairo;cursor:pointer;padding:4px}
+
+/* ---------- child tabs ---------- */
+.kidtabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px}
+.kidtabs:empty{display:none}
+.kidtabs::-webkit-scrollbar{height:0}
+.kt{flex:1 1 0;min-width:max-content;display:flex;align-items:center;justify-content:center;gap:6px;
+    border:1.5px solid rgba(0,78,66,.22);background:var(--bg-white);color:var(--green-dark);
+    font:700 13px Cairo;border-radius:var(--r-pill);padding:11px 14px;cursor:pointer;min-height:44px}
+.kt.act{background:var(--green-primary);border-color:var(--green-primary);color:var(--cream)}
+.kt .n{background:var(--gold);color:var(--cream);font:700 10px Cairo;border-radius:var(--r-pill);
+       min-width:18px;height:18px;display:grid;place-items:center;padding:0 5px}
+.kt.act .n{background:var(--cream);color:var(--green-dark)}
+
+/* ---------- dish row with photo + macros ---------- */
+.om{display:flex;align-items:stretch;gap:11px;padding:10px;border-radius:var(--r-md);cursor:pointer;
+    border:1.5px solid rgba(0,78,66,.07);margin-bottom:9px;background:var(--bg-white);box-shadow:var(--sh-xs)}
+.om.sel{border:2px solid var(--green-primary);padding:8.5px;background:var(--green-wash)}
+.om>img{width:82px;height:82px;border-radius:var(--r-sm);object-fit:cover;flex:none;background:var(--bg-white)}
+.om .nm{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:3px}
+.om .nm b{font:700 14px/1.3 Cairo}
+.om .nm small{font:400 10.5px/1.4 Cairo;color:var(--ink-500)}
+.om .side{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;flex:none}
+.addbtn{width:34px;height:34px;border-radius:50%;border:2px solid var(--green-primary);background:var(--bg-white);
+        color:var(--green-primary);font:700 19px/1 Cairo;display:grid;place-items:center;
+        transition:background .18s ease-out,color .18s ease-out}
+.om:hover .addbtn{background:var(--green-primary);color:var(--cream)}
+.hint{display:flex;align-items:center;gap:6px;font:400 10.5px Cairo;color:var(--ink-500);margin:-3px 0 8px}
+.hint i{color:var(--green-primary)}
+.om .pr{font:700 14px Cairo;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* free juice row above the mains: a flavour or "لا أرغب" must be chosen for every kid/day with a main (asked in the
+   juice popup on تم / review). No photo; dropdown reuses the branch/grade select look */
+.jrow{display:flex;flex-wrap:wrap;align-items:center;gap:9px 11px;padding:10px;border-radius:var(--r-md);
+      border:1.5px solid rgba(0,78,66,.07);margin-bottom:9px;background:var(--bg-white);box-shadow:var(--sh-xs)}
+.jrow .jtx{flex:1;min-width:0}
+.jrow .jtx b{display:block;font:700 14px/1.3 Cairo}
+.jrow .jtx small{font:600 10.5px/1.4 Cairo;color:var(--orange-text)}
+.jrow select{order:3;flex:1 0 100%}
+/* brand orange #EE7D46 is 2.7:1 on white; this darker one is 4.9:1 on white, 4.6:1 on bone (WCAG AA) */
+:root{--orange-text:#B5541F}
+/* juice popup: same bottom sheet as the menu, stacked above it */
+#bd3{z-index:1002}
+#jsheet{z-index:1003}
+.jopts{display:grid;gap:9px;padding:14px 16px 20px}
+.jopt{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:15px 16px;border-radius:var(--r-md);
+      background:var(--bg-white);border:1.5px solid rgba(0,78,66,.1);box-shadow:var(--sh-xs);font:700 15px Cairo;color:var(--green-dark);
+      cursor:pointer;text-align:start}
+.jopt:hover{border-color:var(--green-primary)}
+.jopt.no{font-weight:600;color:var(--ink-500);background:var(--bg-bone)}
+/* benefit tag (وسم) + add-on card with allergen line */
+.tagp{align-self:flex-start;display:inline-block;background:var(--green-wash);color:var(--green-dark);
+      font:600 12px/1.5 Cairo;border-radius:10px;padding:1px 9px;max-width:100%}
+.om.sel .tagp{background:var(--bg-white)}
+.dbody .tagp{margin:2px 0 8px}
+.om.oad{cursor:default}
+.oad .stp{gap:5px}.oad .stp .q{width:20px}
+.algs{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.algs span{background:rgba(238,125,70,.12);color:#C2551F;font:600 10.5px/1.5 Cairo;border-radius:var(--r-pill);padding:0 7px}
+.macs{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:5px;max-width:170px}
+.mc{text-align:center}
+.mc b{display:block;font:700 9.5px Cairo;color:var(--cream);border-radius:var(--r-pill);
+      padding:2.5px 0;line-height:1.3;font-variant-numeric:tabular-nums}
+.mc span{display:block;font:400 8px Cairo;color:var(--ink-500);margin-top:2px}
+.mc.k b{background:var(--green-dark)}
+.mc.p b{background:var(--orange)}
+.mc.c b{background:var(--green-medium)}
+.mc.f b{background:var(--gold)}
+
+/* ---------- confirmation: one screen, never scrolls ---------- */
+.screen#s7.on{display:flex;flex-direction:column;overflow:hidden;padding:0}
+#s7 .done-hero{flex:none;padding:clamp(26px,5vh,44px) var(--s4) clamp(30px,5vh,48px)}
+#s7 .done-hero .circ{width:62px;height:62px;margin-bottom:var(--s3)}
+#s7 .done-hero h1{font-size:clamp(22px,6vw,26px)}
+#s7 .ordno{flex:none;margin:-26px var(--s4) 0}
+.sumcard{flex:none;margin:var(--s4) var(--s4) 0;background:var(--bg-white);border-radius:var(--r-md);
+         box-shadow:var(--sh-sm);border:1px solid rgba(0,78,66,.04);padding:var(--s4);
+         display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--s2)}
+.sumcard .st{text-align:center}
+.sumcard .st b{display:block;font:900 22px Cairo;color:var(--green-dark);font-variant-numeric:tabular-nums;line-height:1.1}
+.sumcard .st span{font:400 11.5px Cairo;color:var(--ink-500)}
+.sumcard .full{grid-column:1/-1;border-top:1px solid rgba(0,78,66,.08);margin-top:var(--s2);
+               padding-top:var(--s3);text-align:center;font:600 12.5px Cairo;color:var(--green-medium)}
+#s7 .s7foot{margin-top:auto;padding:0 var(--s4) clamp(12px,2vh,22px)}
+#s7 .s7note{font:400 12.5px/1.6 Cairo;color:var(--ink-500);text-align:center;margin-bottom:var(--s3)}
+#s7 .foot{padding:var(--s4) 0 0}
+
+/* ---------- compact data screen (fits one phone height) ---------- */
+#s2{padding-top:var(--s5)}
+#s2 h1{font-size:22px}
+#s2 h2{font-size:18px}
+#s2 h3{font-size:14.5px}
+#s2 .field{margin-bottom:12px}
+#s2 .field label{margin-bottom:5px;font-size:13px}
+#s2 input,#s2 select{padding:9px 14px;font-size:16px}   /* 16px: iOS Safari zooms on focus below 16px */
+#s2 input:focus,#s2 select:focus{padding:8px 13px}
+#s2 .phone .cc{padding:9px 14px;font-size:16px}
+#s2 .card{padding:13px;margin-bottom:10px}
+#s2 .card>div:first-child{margin-bottom:10px !important}
+#s2 .note{padding:12px}
+#s2 .note p{font-size:12px;line-height:1.55}
+#s2 .back{margin-bottom:0;padding:4px 0}
+
+
+/* short phones: squeeze the data screen so name + phone + child + grade all fit,
+   with the "add another child" button peeking above the fold */
+@media (max-height:760px){
+  #s2{padding-top:14px}
+  #s2 .steps + div{height:10px !important}
+  #s2 h1{font-size:20px}
+  #s2 > p.cap{display:none}
+  #s2 h2{margin:12px 0 8px !important;font-size:17px}
+  #s2 .field{margin-bottom:9px}
+  #s2 .field label{margin-bottom:4px;font-size:12.5px}
+  #s2 input,#s2 select{padding:8px 13px}
+  #s2 input:focus,#s2 select:focus{padding:7px 12px}
+  #s2 .phone .cc{padding:8px 13px}
+  #s2 .card{padding:11px;margin-bottom:8px}
+  #s2 .note{display:none}
+}
+
+/* ---------- day strip (2 weeks, horizontal scroll) ---------- */
+.strip{display:flex;gap:var(--s3);overflow-x:auto;padding:2px 0 8px;margin:0 -16px;
+       padding-inline:16px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch}
+.strip::-webkit-scrollbar{height:0}
+.week{flex:none;scroll-snap-align:start;position:relative}
+.week+.week{padding-inline-start:14px;border-inline-start:1px dashed rgba(0,78,66,.18)}
+.week .wl{font:700 10.5px Cairo;color:var(--ink-500);margin-bottom:6px;text-align:center}
+.week .wd{display:flex;gap:6px}
+.day{width:62px;padding:7px 4px;border-radius:var(--r-md);border:1.5px solid rgba(0,78,66,.16);
+     background:var(--bg-white);cursor:pointer;display:flex;flex-direction:column;align-items:center;
+     gap:2px;position:relative;transition:background .18s ease-out,border-color .18s ease-out}
+.day b{font:700 11px Cairo;color:var(--green-dark);line-height:1.2}
+.day span{font:700 15px Cairo;color:var(--green-dark);line-height:1.1;font-variant-numeric:tabular-nums}
+.day small{font:400 10px Cairo;color:var(--ink-500);white-space:nowrap}
+.day.act{background:var(--green-dark);border-color:var(--green-dark)}
+.day.act b,.day.act span{color:var(--cream)} .day.act small{color:rgba(255,254,220,.7)}
+.day .dot{position:absolute;top:5px;inset-inline-end:5px;width:7px;height:7px;border-radius:50%;
+          background:var(--green-primary);display:none}
+.day.has .dot{display:block} .day.act.has .dot{background:var(--gold)}
+.cutoff{display:flex;align-items:center;gap:6px;color:var(--ink-500);font:400 11px Cairo;margin-bottom:12px}
+.cutoff i{color:var(--green-medium);flex:none}
+
+/* ---------- compact option rows ---------- */
+.kidblock{background:var(--bg-white);border-radius:var(--r-md);box-shadow:var(--sh-sm);
+          border:1px solid rgba(0,78,66,.04);padding:12px;margin-bottom:var(--s4)}
+.dayhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 10px}
+.dayhead h2{font:700 18px Cairo}
+.dayhead .clear{border:0;background:none;color:var(--orange);font:600 12px Cairo;cursor:pointer;padding:4px}
+.kidhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--s3)}
+.kidhead b{font:700 15px Cairo} .kidhead span{font:400 12px Cairo;color:var(--ink-500)}
+.kidhead .clear{border:0;background:none;color:var(--orange);font:600 12px Cairo;cursor:pointer;padding:4px}
+.lbl{font:700 12px Cairo;color:var(--green-medium);margin:var(--s3) 0 8px}
+.o{display:flex;align-items:center;gap:10px;padding:10px;border-radius:var(--r-sm);cursor:pointer;
+   border:1.5px solid rgba(0,78,66,.07);margin-bottom:6px;background:var(--bg-white);box-shadow:var(--sh-xs)}
+.o.sel{border:2px solid var(--green-primary);padding:8.5px;background:var(--green-wash)}
+.o .tk{width:20px;height:20px;border-radius:50%;border:1.5px solid rgba(0,78,66,.25);flex:none;
+       display:grid;place-items:center;color:transparent;background:var(--bg-white)}
+.o.sel .tk{background:var(--green-primary);border-color:var(--green-primary);color:var(--cream)}
+.o .nm{flex:1;min-width:0}
+.o .nm b{font:600 13.5px Cairo;display:block;line-height:1.3}
+.o .nm small{font:400 11px Cairo;color:var(--ink-500)}
+.o .pr{font:700 13px Cairo;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stp{display:flex;align-items:center;gap:8px;flex:none}
+.stp button{width:30px;height:30px;border-radius:50%;border:0;background:var(--green-primary);
+            color:var(--cream);font:700 16px Cairo;cursor:pointer;line-height:1}
+.stp button:disabled{opacity:.35}
+.stp .q{width:26px;text-align:center;font:700 14px Cairo;font-variant-numeric:tabular-nums}
+
+/* ---------- bottom sheet ---------- */
+.backdrop{position:fixed;inset:0;background:rgba(0,78,66,.45);display:none;z-index:1000}
+.backdrop.on{display:block}
+.sheet{position:fixed;bottom:0;width:100%;max-width:var(--container);background:var(--bg-bone);
+       border-radius:var(--r-lg) var(--r-lg) 0 0;box-shadow:var(--sh-sheet);max-height:86vh;
+       overflow-y:auto;padding:var(--s6) var(--s4) 120px;z-index:1001;transform:translateY(100%);
+       transition:transform .28s cubic-bezier(.22,.61,.36,1)}
+.sheet.on{transform:translateY(0)}
+.handle{width:40px;height:4px;border-radius:var(--r-pill);background:rgba(0,78,66,.18);margin:0 auto var(--s5)}
+
+.opt{background:var(--bg-white);border-radius:var(--r-md);border:1.5px solid rgba(0,78,66,.08);
+     padding:var(--s4);margin-bottom:var(--s3);display:flex;align-items:center;gap:var(--s3);cursor:pointer;
+     transition:border-color .2s ease-out,box-shadow .2s ease-out}
+.opt:hover{box-shadow:var(--sh-sm)}
+.opt.sel{border:2px solid var(--green-primary);padding:15px}
+.opt .tick{width:24px;height:24px;border-radius:var(--r-pill);border:1.5px solid rgba(0,78,66,.25);
+           flex:none;display:grid;place-items:center;color:transparent}
+.opt.sel .tick{background:var(--green-primary);border-color:var(--green-primary);color:var(--cream)}
+.opt .n{flex:1}
+.opt .n b{font:600 15px Cairo;display:block}
+.opt .n span{font:400 12px Cairo;color:var(--ink-500)}
+.opt .price{font:700 15px Cairo;color:var(--green-dark);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sechead{font:700 20px/1.25 Cairo;margin:var(--s7) 0 var(--s2)}
+.sechead:first-of-type{margin-top:0}
+
+.stepper{display:flex;align-items:center;gap:var(--s3)}
+.stepper button{width:40px;height:40px;border-radius:var(--r-pill);border:0;background:var(--green-primary);
+                color:var(--cream);font:700 20px Cairo;cursor:pointer;display:grid;place-items:center}
+.stepper button:disabled{opacity:.4}
+.stepper .q{width:56px;text-align:center;font:700 18px Cairo;color:var(--green-dark);
+            background:var(--bg-bone);border-radius:var(--r-sm);padding:8px 0;font-variant-numeric:tabular-nums}
+
+/* ---------- cart ---------- */
+.grp{background:var(--bg-white);border-radius:var(--r-md);box-shadow:var(--sh-sm);margin-bottom:var(--s4);overflow:hidden}
+.grp .gh{background:var(--green-dark);color:var(--cream);padding:var(--s3) var(--s4);
+         display:flex;justify-content:space-between;align-items:center}
+.grp .gh b{font:700 15px Cairo}
+.grp .gh span{font:400 12px Cairo;opacity:.8}
+/* لون مختلف لكل ولد: أخضر غامق ← ذهبي ← برتقالي ← أخضر متوسط */
+.grp.c1 .gh{background:var(--gold);color:var(--green-dark)}
+.grp.c1 .gh span{opacity:.9}
+.grp.c2 .gh{background:var(--orange);color:#fff}
+.grp.c3 .gh{background:var(--green-medium);color:var(--cream)}
+.grp.c1{border:2px solid var(--gold)}
+.grp.c2{border:2px solid var(--orange)}
+.grp.c3{border:2px solid var(--green-medium)}
+.grp.c0{border:2px solid var(--green-dark)}
+.line{padding:var(--s3) var(--s4);border-bottom:1px solid rgba(0,78,66,.06)}
+.line:last-child{border-bottom:0}
+.line .d{font:600 13px Cairo;color:var(--green-medium);margin-bottom:6px}
+.line .it{display:flex;justify-content:space-between;font:400 14px Cairo;padding:2px 0}
+.line .it span:last-child{font-variant-numeric:tabular-nums}
+.line .it.add{color:var(--ink-500);font-size:13px}
+.note{background:var(--green-wash);border-radius:var(--r-md);padding:var(--s4);display:flex;gap:var(--s3);
+      align-items:flex-start;margin-bottom:var(--s4)}
+.note .ic{color:var(--green-medium);flex:none;margin-top:2px}
+.note p{font:400 13px/1.6 Cairo;color:var(--green-dark)}
+
+/* ---------- confirmation ---------- */
+.done-hero{background:var(--green-primary);padding:var(--s9) var(--s4);text-align:center;position:relative;overflow:hidden}
+.done-hero .wm{position:absolute;inset-inline-start:-50px;bottom:-40px;width:180px;opacity:.12}
+.done-hero .circ{width:72px;height:72px;border-radius:var(--r-pill);background:var(--cream);
+                 display:grid;place-items:center;margin:0 auto var(--s4);color:var(--green-primary);position:relative}
+.done-hero h1{color:var(--cream);font-size:26px}
+.done-hero p{color:var(--cream);opacity:.9;font:400 14px/1.6 Cairo;margin-top:var(--s2)}
+.ordno{background:var(--bg-white);border-radius:var(--r-md);padding:var(--s4);text-align:center;
+       box-shadow:var(--sh-sm);margin:calc(var(--s6) * -1 + -8px) var(--s4) var(--s6);position:relative;z-index:2}
+.ordno span{font:400 12px Cairo;color:var(--ink-500);display:block}
+.ordno b{font:900 22px Cairo;letter-spacing:.02em}
+.wa{display:flex;align-items:center;justify-content:center;gap:var(--s2);background:var(--gold);
+    color:var(--cream);border-radius:var(--r-md);padding:16px;font:700 16px Cairo;text-decoration:none;
+    box-shadow:0 4px 12px rgba(237,176,44,.25)}
+.foot{text-align:center;padding:var(--s7) var(--s4);font:400 12px Cairo;color:var(--ink-500)}
+.foot b{display:block;font:700 14px Cairo;color:var(--green-primary);margin-bottom:6px}
+
+/* ===== variant C: white home screen, kids photo ===== */
+.brandbar{background:#fff;border-bottom:0}
+.hero{background:#fff}
+.hero::after{display:none}
+.hero .wm{display:none}
+.hero h1{color:var(--green-dark)}
+.hero h1 .hl{color:var(--green-primary)}
+.hero p{color:var(--ink-700);opacity:1}
+.hero .lang{border-color:rgba(0,78,66,.35);color:var(--green-dark)}
+.shotwrap{padding-bottom:54px;margin-top:clamp(2px,.6vh,8px)}
+.hero .shot.kids{max-width:none;width:min(108%,460px);transform:none;filter:drop-shadow(0 8px 18px rgba(0,60,40,.14));object-position:bottom center}
+.bar-ghost{background:linear-gradient(to top,#fff 70%,rgba(255,255,255,0))}
+.shotwrap{position:relative}
+.ribbon{position:absolute;left:-6%;width:112%;height:clamp(90px,17vh,150px);bottom:calc(54px + 14%);z-index:0;pointer-events:none}
+.hero .shot.kids{position:relative;z-index:1}
+/* ---------- school picker ---------- */
+#s0{padding:22px 18px 24px;display:none;flex-direction:column}
+#s0.on{display:flex}
+.pk-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
+.pk-wm{height:30px}
+.pk-lang{border:1.5px solid rgba(0,78,66,.25);background:transparent;color:var(--green-dark);font:700 11px Cairo;border-radius:var(--r-pill);padding:6px 12px;cursor:pointer}
+.pk-h{font:700 26px/1.25 Cairo;color:var(--green-dark)}
+.pk-sub{font:400 14px/1.6 Cairo;color:var(--ink-500);margin:6px 0 20px}
+.pk-list{display:flex;flex-direction:column;gap:12px}
+.pk-card{display:flex;align-items:center;gap:14px;background:var(--bg-white);border-radius:var(--r-md);padding:14px 16px;box-shadow:var(--sh-sm);text-decoration:none;color:var(--green-dark);border:1.5px solid transparent;transition:border-color .15s}
+.pk-card:active,.pk-card:hover{border-color:var(--green-primary)}
+.pk-logo{width:56px;height:56px;flex:none;border-radius:var(--r-sm);background:var(--bg-bone);display:grid;place-items:center;overflow:hidden}
+.pk-logo img{max-width:48px;max-height:48px;object-fit:contain}
+.pk-nm{flex:1;min-width:0}
+.pk-nm b{display:block;font:700 16px/1.35 Cairo}
+.pk-nm span{display:block;font:400 12.5px/1.4 Cairo;color:var(--ink-500);direction:ltr;text-align:start;unicode-bidi:plaintext}
+.pk-card svg{flex:none;color:var(--green-primary)}
+.pk-empty{background:var(--bg-white);border-radius:var(--r-md);padding:22px;text-align:center;color:var(--ink-500);font:600 14px Cairo}
+.pk-go{display:block;margin:0 0 16px;text-align:center;text-decoration:none}
+.pk-foot{margin-top:auto;padding-top:22px;text-align:center;font:700 15px Cairo;color:var(--green-primary)}
+#heroImg{opacity:0;transition:opacity .35s ease}
+.schbr{font:700 14px/1.5 Cairo;color:var(--green-medium);margin:0 0 20px}
+.schbr span{display:block;font:400 13px/1.5 Cairo;color:var(--ink-500)}
+.sumcard .full.schbr{margin:0;font-size:13px}
+/* generic fallback (Greenola bag): show it whole instead of the kids zoom-crop */
+.hero .shot.kids.generic{width:auto;height:auto;max-width:86%;max-height:86%;object-fit:contain;object-position:bottom center;margin:auto auto 70px}
+#heroImg.on{opacity:1}
+
+/* ===== C2: green circle stage ===== */
+.stage{position:absolute;left:50%;top:34%;height:170%;aspect-ratio:1;transform:translateX(-50%);border-radius:50%;
+       background:radial-gradient(circle at 50% 30%,#43C57A 0%,#24B25D 45%,#1EA254 100%);z-index:0;pointer-events:none;overflow:hidden;
+       box-shadow:0 -12px 40px rgba(0,78,66,.10)}
+.stage .wm3{position:absolute;left:14%;top:3%;width:30%;opacity:.18;transform:rotate(-10deg)}
+.shotwrap{padding-bottom:70px}
+.bar-ghost{background:transparent}
+.bar-ghost .btn-primary{background:var(--gold);color:var(--cream);box-shadow:0 8px 22px rgba(0,78,66,.22)}
+
+/* zoom-in on the kids: photo taller than its slot, feet cropped behind the CTA */
+.shotwrap{justify-content:flex-start;padding-bottom:0;overflow:visible}
+.hero .shot.kids{height:112%;width:auto;max-width:none;flex:none;object-fit:cover;object-position:top center;margin-top:4px}
+
+/* lift the kids so the bag shows */
+.hero{padding-top:clamp(10px,2vh,18px)}
+.hero h1{margin-top:6px}
+.hero p{margin-top:6px}
+.shotwrap{margin-top:0}
+.hero .shot.kids{margin-top:-6px}
+.o>img{width:64px;height:64px;border-radius:var(--r-sm);object-fit:cover;flex:none;pointer-events:none;background:var(--bg-white)}
+.o{cursor:default}
+
+/* ---------- live backend states (Phase 3) ---------- */
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translate(-50%,20px);
+       width:min(92vw,420px);background:var(--green-dark);color:var(--cream);border-radius:var(--r-md);
+       padding:12px 16px;font:600 14px/1.5 Cairo;box-shadow:var(--sh-lg);z-index:100;opacity:0;
+       pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.toast.bad{background:var(--orange)}
+.btn[disabled]{opacity:.6;cursor:wait}
+.payph{background:var(--bg-white);border-radius:var(--r-md);padding:var(--s4);box-shadow:var(--sh-sm);text-align:center}
+.payph .pn{font:400 13px Cairo;color:var(--ink-500)}
+.payph .pn b{font:700 16px Cairo;color:var(--green-dark);display:block;margin-top:2px;direction:ltr}
+.payph .go{font:700 15px Cairo;color:var(--green-primary);margin:10px 0 12px}
+.payph .tt{font:400 12px/1.6 Cairo;color:var(--ink-500);margin-top:10px}
+.loadfull{display:grid;place-items:center;min-height:40vh;font:600 15px Cairo;color:var(--green-medium)}
+#s7.st-pending .circ,#s7.st-failed .circ,#s7.st-expired .circ,#s7.st-cancelled .circ{background:var(--cream)}
+#s7 .retry{margin-top:var(--s3)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="brandbar">
+    <img class="g" src="assets/logos/wordmark-on-dark-green.png" alt="Greenola">
+    <img class="s" id="schoolLogo" alt="" hidden>
+  </div>
+
+  <!-- ============ 1. INTRO ============ -->
+  <!-- ============ 0. SCHOOL PICKER (no school in the URL) ============ -->
+  <section class="screen" id="s0">
+    <div class="pk-top">
+      <img class="pk-wm" src="assets/logos/wordmark-on-dark-green.png" alt="Greenola">
+      <button class="pk-lang" onclick="setLang(LANG==='ar'?'en':'ar')" data-t="langBtn">EN</button>
+    </div>
+    <h1 class="pk-h" id="pkTitle" data-t="pickTitle">اختر مدرستك</h1>
+    <p class="pk-sub" id="pkSub" data-t="pickSub">اختر المدرسة عشان تشوف منيوها وتطلب</p>
+    <div id="pkList" class="pk-list"></div>
+    <div class="pk-foot"><b data-t="tagline">بنعيشها سوا</b></div>
+  </section>
+
+  <section class="screen hero-screen on" id="s1">
+    <div class="hero">
+      <img class="wm" src="assets/logos/leaf-e-cream.png" alt="">
+      <div class="htxt">
+        <div class="toprow">
+          <span class="tag" data-t="tag">بالتعاون مع مدارس التعلم ثنائي اللغة</span>
+          <button class="lang" id="langbtn" onclick="setLang(LANG==='ar'?'en':'ar')">EN</button>
+        </div>
+        <h1 data-th="h1">صحة أولادنا تبدأ<br>من وجبتهم</h1>
+        <p data-t="sub">وجبات متوازنة، محسوبة السعرات، تعطيهم طاقة وتركيز.</p>
+      </div>
+      <div class="shotwrap"><div class="stage"><img class="wm3" src="assets/logos/leaf-e-cream.png" alt=""></div><img class="shot kids" id="heroImg" alt=""></div>
+    </div>
+
+    <div class="bar bar-ghost"><button class="btn btn-primary btn-block" onclick="go(2)"><span data-t="ctaStart">اختار وجبات ولدك</span>
+      <i class="fwd" data-lucide="arrow-left" width="18"></i></button></div>
+  </section>
+
+  <!-- ============ 2. PARENT ============ -->
+  <section class="screen" id="s2">
+    <div class="steps"><i class="done"></i><i></i><i></i></div>
+    <div style="height:24px"></div>
+    <button class="back" onclick="go(1)"><i class="bck" data-lucide="arrow-right" width="16"></i> <span data-t="back">رجوع</span></button>
+    <h1 data-t="s2h1">بياناتك وأولادك</h1>
+    <p id="hiBack" hidden style="font:600 15px Cairo;color:var(--green-medium);margin:4px 0 0"></p>
+    <p class="cap" style="margin:6px 0 16px" data-t="s2sub">بياناتك عشان نوصل لك لو احتجنا نتأكد من شي في الطلب.</p>
+
+    <div class="field" id="f-branch" hidden>
+      <label><span data-t="lblBranch">الفرع</span> <span class="req">*</span></label>
+      <select id="pbranch" onchange="BRANCH_SEL=this.value;this.closest('.field').classList.remove('err')"></select>
+      <div class="errmsg" data-t="errBranch">اختر الفرع</div>
+    </div>
+    <div class="field" id="f-name">
+      <label><span data-t="lblName">اسم ولي الأمر</span> <span class="req">*</span></label>
+      <input type="text" id="pname" placeholder="أحمد محمد" data-tp="phName">
+      <div class="errmsg" data-t="errName">اكتب اسمك</div>
+    </div>
+    <div class="field" id="f-phone">
+      <label><span data-t="lblPhone">جوال ولي الأمر</span> <span class="req">*</span></label>
+      <div class="phone"><div class="cc">+966</div><input type="tel" id="pphone" inputmode="tel" placeholder="5XXXXXXXX" maxlength="9" oninput="normPhone(this)"></div>
+      <div class="errmsg" data-t="errPhone">اكتب رقم جوال صحيح يبدأ بـ 5 (عربي أو إنجليزي)</div>
+    </div>
+
+    <h2 style="margin:18px 0 10px" data-t="addKidH">أضف ولدك</h2>
+
+    <div id="kids"></div>
+    <button class="btn btn-outline btn-block" onclick="addKid()" style="margin-top:8px">
+      <i data-lucide="plus" width="18"></i> <span data-t="addKidBtn">إضافة ولد</span></button>
+
+    <div class="note" style="margin-top:14px"><div class="ic"><i data-lucide="shield-check" width="18"></i></div>
+      <p data-t="s2note">ما نحتاج منك تسجيل حساب ولا كلمة سر. رقمك نستخدمه للطلب فقط. تقدر تضيف أكثر من ولد وتدفع لهم مرة وحدة.</p></div>
+
+    <div class="bar"><button class="btn btn-primary btn-block" onclick="saveAll()" data-t="next">التالي</button></div>
+  </section>
+
+  <!-- ============ 3. DAYS + MEALS (one screen) ============ -->
+  <section class="screen" id="s4">
+    <div class="steps"><i class="done"></i><i class="done"></i><i></i></div>
+    <button class="back" onclick="go(2)" style="margin:10px 0 2px"><i class="bck" data-lucide="arrow-right" width="16"></i> <span data-t="back">رجوع</span></button>
+    <h1 style="font-size:20px;margin-bottom:10px" data-t="s4h1">الأيام والوجبات</h1>
+    <div class="dayfix">
+      <div class="strip" id="strip"></div>
+      <div class="dayhead"><h2 id="daytitle"></h2></div>
+    </div>
+    <div class="cutoff"><i data-lucide="clock" width="14"></i><span data-t="cutoff">الطلب يقفل 12 منتصف ليل اليوم اللي قبله</span></div>
+    <div id="panel"></div>
+    <div class="bar">
+      <div class="sum"><span data-t="total">الإجمالي</span><b><span id="bar5">0</span><i data-t="cur">ر.س</i></b></div>
+      <button class="btn btn-primary btn-block" onclick="goCart()" data-t="review">مراجعة الطلب</button>
+    </div>
+  </section>
+
+  <!-- ============ 6. CART ============ -->
+  <section class="screen" id="s6">
+    <div class="steps"><i class="done"></i><i class="done"></i><i class="done"></i></div>
+    <div style="height:24px"></div>
+    <button class="back" onclick="go(4)"><i class="bck" data-lucide="arrow-right" width="16"></i> <span data-t="back">رجوع</span></button>
+    <h1 data-t="review">مراجعة الطلب</h1>
+    <p class="cap" style="margin:8px 0 6px" data-t="s6sub">تأكد من كل شي قبل الدفع.</p>
+    <p class="schbr" id="s6school"></p>
+    <div id="cart"></div>
+    <div class="checkout-payment-card" id="payMethods" role="radiogroup" aria-label="payment method">
+      <div class="checkout-section-label" data-t="payMethod">طريقة الدفع</div>
+      <div class="pay-method" data-method="apple_pay" role="radio" tabindex="0" onclick="selectPayMethod('apple_pay')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPayMethod('apple_pay')}">
+        <div class="pay-radio" aria-hidden="true"></div>
+        <div class="pay-info">
+          <div class="pay-name">Apple Pay</div>
+          <div class="pay-sub" data-t="payAppleSub">دفع آمن وسريع عبر جهازك</div>
+        </div>
+        <div class="pay-logo pay-logo-apple" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+        </div>
+      </div>
+      <div class="pay-method" data-method="mada" role="radio" tabindex="0" onclick="selectPayMethod('mada')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPayMethod('mada')}">
+        <div class="pay-radio" aria-hidden="true"></div>
+        <div class="pay-info">
+          <div class="pay-name" data-t="payMada">مدى</div>
+          <div class="pay-sub" data-t="payMadaSub">بطاقة الصراف الآلي السعودية</div>
+        </div>
+        <div class="pay-logo pay-logo-mada" aria-hidden="true">
+          <span class="mada-dots"><span class="d1"></span><span class="d2"></span><span class="d3"></span></span>
+          <span class="mada-text">mada</span>
+        </div>
+      </div>
+      <div class="pay-method" data-method="card" role="radio" tabindex="0" onclick="selectPayMethod('card')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPayMethod('card')}">
+        <div class="pay-radio" aria-hidden="true"></div>
+        <div class="pay-info">
+          <div class="pay-name" data-t="payCard">بطاقة ائتمان أو خصم</div>
+          <div class="pay-sub">Visa / Mastercard</div>
+        </div>
+        <div class="pay-logo pay-logo-card" aria-hidden="true">
+          <svg width="20" height="14" viewBox="0 0 24 16" fill="none"><rect width="24" height="16" rx="2" fill="#1A1F71"/><text x="12" y="11" text-anchor="middle" font-family="Arial Black" font-size="6" fill="#fff" font-weight="900">VISA</text></svg>
+          <svg width="20" height="14" viewBox="0 0 24 16" fill="none"><rect width="24" height="16" rx="2" fill="#fff" stroke="#E0E0E0"/><circle cx="9" cy="8" r="5" fill="#EB001B"/><circle cx="15" cy="8" r="5" fill="#F79E1B" fill-opacity=".85"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="note"><div class="ic"><i data-lucide="alert-circle" width="18"></i></div>
+      <p data-t="s6note">بعد الدفع ما يمكن تعديل الطلب أو إلغاؤه من الرابط. لو احتجت تغيير كلّمنا واتساب.</p></div>
+    <div class="bar" id="paybar">
+      <div class="sum"><span data-t="totalVat">الإجمالي شامل الضريبة</span><b><span id="bar6">0</span><i data-t="cur">ر.س</i></b></div>
+      <p class="minerr" id="minerr" role="alert"></p>
+      <button class="btn btn-primary btn-block" id="paybtn" onclick="pay()" disabled>
+        <i data-lucide="lock" width="18"></i> <span id="payBtnLabel" data-t="paySelect">اختر طريقة الدفع</span></button>
+      <p class="checkout-trust">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span data-t="payTrust">الدفع آمن — جميع البيانات مشفرة</span>
+      </p>
+      <p class="cap" style="text-align:center;margin-top:8px" data-t="payVia">الدفع عبر HyperPay · مدى · آبل باي · فيزا</p>
+      <div id="payph"></div>
+    </div>
+  </section>
+
+  <!-- ============ 8. HYPERPAY WIDGET ============ -->
+  <section class="screen" id="s8">
+    <div style="height:24px"></div>
+    <button class="back" type="button" onclick="backFromPayment()"><i class="bck" data-lucide="arrow-right" width="16"></i> <span data-t="back">رجوع</span></button>
+    <h1 data-t="payTitle">إتمام الدفع</h1>
+    <p class="cap" style="margin:8px 0 14px" data-t="payTitleSub">أكمل الدفع بشكل آمن عبر HyperPay</p>
+    <div class="hp-summary" id="hpSum"></div>
+    <div id="hpBlocked" class="hp-blocked" hidden></div>
+    <div id="hpError" class="hp-error" hidden></div>
+    <div id="hpWidgetWrap" class="hp-form-card hyperpay-widget-root" hidden>
+      <div class="hp-gateway-header">
+        <div class="hp-brand-pills" id="hpPills" aria-hidden="true"></div>
+        <p class="hp-gateway-hint" id="hpHint" data-t="payHint">ادخل بيانات بطاقتك لإتمام الدفع</p>
+      </div>
+      <div class="hp-overlay" id="hpOverlay" aria-live="polite">
+        <span class="hp-spinner" aria-hidden="true"></span>
+        <p data-t="payLoading">جارٍ تحميل نموذج الدفع…</p>
+      </div>
+      <!-- No form action: HyperPay shopperResultUrl is set by the backend at checkout create. -->
+      <form id="hpForm" class="paymentWidgets" data-brands=""></form>
+      <p class="hp-secure-note">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+        <span data-t="paySecure">الدفع مشفر وآمن</span>
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ 7. CONFIRMATION / STATUS ============ -->
+  <section class="screen" id="s7">
+    <div class="done-hero">
+      <img class="wm" src="assets/logos/leaf-e-cream.png" alt="">
+      <div class="circ"><i id="s7icon" data-lucide="check" width="30" stroke-width="3"></i></div>
+      <h1 id="s7h1" data-t="s7h1">تم استلام طلبك</h1>
+      <p id="s7sub" data-t="s7sub">وصلتنا وجبات ولدك وبتجهز في يومها.</p>
+    </div>
+    <div class="ordno"><span data-t="ordNo">رقم الطلب</span><b id="ordno">GRN-0000</b></div>
+    <div class="sumcard" id="sum7"></div>
+    <div id="s7act"></div>
+    <div class="s7foot">
+      <p class="s7note" data-t="s7note">أي تغيير أو استفسار، كلّمنا واتساب ومعك رقم الطلب.</p>
+      <a class="wa" href="https://wa.me/message/QC3VU3UP5OTWJ1" target="_blank">
+        <i data-lucide="message-circle" width="20"></i> <span data-t="wa">تواصل معنا واتساب</span></a>
+      <div class="foot"><b data-t="tagline">بنعيشها سوا</b><span data-t="footer">جرينولا · الرياض · 0509988394</span></div>
+    </div>
+  </section>
+
+  <div class="backdrop" id="bd2" onclick="closeMenu()"></div>
+  <div class="dsheet" id="dsheet"></div>
+  <div class="backdrop" id="bd3" onclick="closeJuiceAsk()"></div>
+  <div class="dsheet" id="jsheet" role="dialog" aria-modal="true" aria-labelledby="jtitle"></div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+/* ============================================================
+   LIVE BACKEND (Supabase Edge Functions on greenola-allinone).
+   Menu, prices, dates and the school come from school-menu.
+   Prices sent at checkout are ignored; the server prices from the DB.
+   ============================================================ */
+const API_REMOTE='https://jmtqldgovmmhaystvpdu.supabase.co/functions/v1';
+/* Local preview (dev-server.mjs): same-origin proxy so localhost is not blocked by school-menu CORS. */
+const API_LOCAL_PROXY='/__dev-api';
+const USE_LOCAL_PROXY=(()=>{
+  try{
+    if(location.protocol==='file:') return false;
+    return /^(localhost|127\.0\.0\.1)$/i.test(location.hostname||'');
+  }catch(e){ return false; }
+})();
+const API=USE_LOCAL_PROXY?API_LOCAL_PROXY:API_REMOTE;
+/* file:// cannot call school-orders. localhost uses /__school-orders (same production API). */
+function localReadonlyActive(){
+  return location.protocol==='file:';
+}
+/* school-menu runs next to the DB (Frankfurt), where pg_cron job school-menu-warm-5min keeps it warm */
+const MENU_REGION='&forceFunctionRegion=eu-central-1';
+/* the school logo lives at a fixed path, so it can be shown before school-menu answers */
+const LOGO_GUESS=s=>'https://jmtqldgovmmhaystvpdu.supabase.co/storage/v1/object/public/school-menu/'+s+'/logo.png';
+const HERO_GUESS=s=>'https://jmtqldgovmmhaystvpdu.supabase.co/storage/v1/object/public/school-menu/'+s+'/hero.png';
+const QS=new URLSearchParams(location.search);
+/* school slug: ?s=<slug>, else the clean path school.greenolasa.com/<slug> (Cloudflare _redirects rewrite), else bls */
+const RESERVED_PATHS=['index.html','assets','app','admin','api'];
+const PATH_SLUG=(()=>{
+  if(!/^https?:$/.test(location.protocol))return null;          /* local file:// preview: no path slug */
+  const segs=location.pathname.split('/').filter(Boolean);
+  if(segs.length!==1)return null;
+  let seg=''; try{seg=decodeURIComponent(segs[0]).toLowerCase();}catch(e){return null;}
+  return /^[a-z0-9-]{2,32}$/.test(seg)&&!RESERVED_PATHS.includes(seg)?seg:null;
+})();
+const SCHOOL=((((QS.get('s')||PATH_SLUG||'')+'').toLowerCase().match(/^[a-z0-9-]{2,32}$/))||[null])[0];   /* null = no school chosen: show the picker */
+/* where this school's page lives: /<slug> when served on the clean URL, else this file with ?s= */
+function schoolHome(){ if(!SCHOOL) return '/'; return PATH_SLUG?('/'+encodeURIComponent(SCHOOL)):(location.pathname+'?s='+encodeURIComponent(SCHOOL)); }
+let MIN_TOTAL=24;              /* school_settings.min_order_total (from school-menu) */
+let SCHOOL_INFO=null;          /* {id,name_ar,name_en,logo_url,min_name_words,...} */
+let API_DATES=[];              /* [{iso,closed}] from the server (Riyadh time) */
+let TODAY_R=null;              /* today in Riyadh, from the server */
+/* Same shapes as the prototype so the render code stays untouched; ids are DB uuids, img is an absolute URL. */
+let MAINS=[];
+let ADDONS=[];
+let JUICES=[];                 /* addon items with sku juice-*: free; per kid/day with a main the parent picks a flavour (qty = mains qty) or JUICE_NONE */
+const JUICE_NONE='__none__';   /* v.juice value for "لا أرغب في العصير": a made choice, no juice line */
+const ALG={
+  ar:{gluten:'الجلوتين',milk:'الحليب ومشتقاته',eggs:'البيض',peanuts:'الفول السوداني',treenuts:'المكسرات',fish:'السمك',
+      crustaceans:'القشريات',mollusks:'الرخويات',soy:'الصويا',sesame:'السمسم',celery:'الكرفس',mustard:'الخردل',sulphites:'الكبريتات',lupins:'الترمس'},
+  en:{gluten:'Gluten',milk:'Milk & dairy',eggs:'Eggs',peanuts:'Peanuts',treenuts:'Tree nuts',fish:'Fish',
+      crustaceans:'Crustaceans',mollusks:'Mollusks',soy:'Soy',sesame:'Sesame',celery:'Celery',mustard:'Mustard',sulphites:'Sulphites',lupins:'Lupins'}};
+/* المراحل: روضة → ثالث ثانوي */
+const GRADES=[
+  {ar:'روضة',en:'KG'},{ar:'تمهيدي',en:'Pre-Primary'},
+  {ar:'أول ابتدائي',en:'Grade 1'},{ar:'ثاني ابتدائي',en:'Grade 2'},{ar:'ثالث ابتدائي',en:'Grade 3'},
+  {ar:'رابع ابتدائي',en:'Grade 4'},{ar:'خامس ابتدائي',en:'Grade 5'},{ar:'سادس ابتدائي',en:'Grade 6'},
+  {ar:'أول متوسط',en:'Grade 7'},{ar:'ثاني متوسط',en:'Grade 8'},{ar:'ثالث متوسط',en:'Grade 9'},
+  {ar:'أول ثانوي',en:'Grade 10'},{ar:'ثاني ثانوي',en:'Grade 11'},{ar:'ثالث ثانوي',en:'Grade 12'}];
+const DAYS_={ar:['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],
+             en:['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']};
+const MONTHS_={ar:['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+               en:['January','February','March','April','May','June','July','August','September','October','November','December']};
+
+/* ---------- i18n ---------- */
+let LANG='ar';
+try{ if(localStorage.getItem('lang')==='en') LANG='en'; }catch(e){}
+const T={
+ ar:{tag:'بالتعاون مع مدارس التعلم ثنائي اللغة',h1:'صحة أولادنا تبدأ<br>من <span class="hl">وجبتهم</span>',sub:'وجبات متوازنة، محسوبة السعرات، تعطيهم طاقة وتركيز.',
+     ctaStart:'اختار وجبات ولدك',back:'رجوع',s2h1:'بياناتك وأولادك',hiBack:'أهلاً بك، {n}',s2sub:'بياناتك عشان نوصل لك لو احتجنا نتأكد من شي في الطلب.',
+     lblName:'اسم ولي الأمر',phName:'أحمد محمد',errName:'اكتب اسمك',lblPhone:'جوال ولي الأمر',errPhone:'اكتب رقم جوال صحيح يبدأ بـ 5 (عربي أو إنجليزي)',
+     addKidH:'أضف ولدك',addKidBtn:'إضافة ولد',s2note:'ما نحتاج منك تسجيل حساب ولا كلمة سر. رقمك نستخدمه للطلب فقط. تقدر تضيف أكثر من ولد وتدفع لهم مرة وحدة.',
+     next:'التالي',kidN:'الولد',del:'حذف',kidName:'اسم الولد بالكامل',phKid:'محمد أحمد العلي',kidNote:'اكتب الاسم كامل عشان ما يتداخل مع ولد ثاني',errKidName:'اكتب الاسم الأول واسم الأب على الأقل',grade:'الصف',pickGrade:'اختر الصف',errKids:'اكتب اسم كل ولد بالكامل واختر صفّه',
+     s4h1:'الأيام والوجبات',cutoff:'الطلب يقفل 12 منتصف ليل اليوم اللي قبله',thisWeek:'هذا الأسبوع',nextWeek:'الأسبوع الجاي',after:'اللي بعده',
+     tapPick:'اضغط عشان تختار وجبته',pick:'اختر',pickFor:'اختر لـ',done:'تم',main:'الطبق الرئيسي',addons:'إضافات',salDes:'سلطات وحلا',drinks:'مشروبات',optional:'اختياري',
+     juiceLbl:'العصير',juiceName:'عصير المراعي صغير',juiceSub:'مجاناً مع كل طبق رئيسي — اختياري',juiceNone:'لا أرغب في العصير',juiceAsk:'اختر العصير',mealIncl:'الوجبة تشمل: طبق رئيسي + بطاطس + عصير',
+     kcal:'سعرة',pro:'بروتين',carb:'كارب',fat:'دهون',g:'غ',clearDay:'مسح اختيارات اليوم',nutri:'القيم الغذائية للوجبة',allerg:'مسببات الحساسية',none:'لا يوجد',
+     addToOrder:'أضف للطلب',total:'الإجمالي',totalVat:'الإجمالي شامل الضريبة',cur:'ر.س',review:'مراجعة الطلب',s6sub:'تأكد من كل شي قبل الدفع.',
+     s6note:'بعد الدفع ما يمكن تعديل الطلب أو إلغاؤه من الرابط. لو احتجت تغيير كلّمنا واتساب.',payNow:'ادفع الآن',payVia:'الدفع عبر HyperPay · مدى · آبل باي · فيزا',
+     payMethod:'طريقة الدفع',paySelect:'اختر طريقة الدفع',payAppleSub:'دفع آمن وسريع عبر جهازك',payMada:'مدى',payMadaSub:'بطاقة الصراف الآلي السعودية',payCard:'بطاقة ائتمان أو خصم',
+     payTrust:'الدفع آمن — جميع البيانات مشفرة',payTitle:'إتمام الدفع',payTitleSub:'أكمل الدفع بشكل آمن عبر HyperPay',
+     payHint:'ادخل بيانات بطاقتك لإتمام الدفع',payHintApple:'استخدم Apple Pay لإتمام الدفع',payLoading:'جارٍ تحميل نموذج الدفع…',paySecure:'الدفع مشفر وآمن',
+     payPreparing:'جارٍ تجهيز الدفع…',payAppleBtn:'ادفع {amount} عبر Apple Pay',payMadaBtn:'ادفع {amount} عبر مدى',payCardBtn:'ادفع {amount} بالبطاقة',
+     payBlockedH:'تعذّر بدء جلسة الدفع',payBlockedP:'ما قدرنا نجهز نموذج HyperPay لهذا الطلب. جرّب مرة ثانية أو تواصل معنا.',
+     payApplePending:'آبل باي: الـ backend لم يُرجع APPLEPAY بعد — النموذج يعرض العلامات المُرجَعة فقط.',
+     payRetry:'إعادة محاولة الدفع',payWidgetErr:'تعذّر تحميل بوابة الدفع. جرّب مرة ثانية.',
+     payReturnFailed:'لم يكتمل الدفع. طلبك ما زال بانتظار الدفع — جرّب مرة ثانية.',
+     payLoadingSession:'جارٍ تجهيز جلسة الدفع…',
+     errNone:'اختر وجبة واحدة على الأقل',errMin:'لازم يكون في الطلب طبق رئيسي واحد على الأقل، أو يكون إجمالي الطلب {min} ريال على الأقل',errEmpty:'ما اخترت أي وجبة لـ {n}. نكمل بدونها؟',and:' و ',
+     s7h1:'تم استلام طلبك',s7sub:'وصلتنا وجبات ولدك وبتجهز في يومها.',ordNo:'رقم الطلب',meal:'وجبة',day:'يوم',firstDel:'أول توصيل',
+     s7note:'أي تغيير أو استفسار، كلّمنا واتساب ومعك رقم الطلب.',wa:'تواصل معنا واتساب',tagline:'بنعيشها سوا',footer:'جرينولا · الرياض · 0509988394',
+     loading:'لحظة، نجهز لك المنيو…',errMenu:'ما قدرنا نحمّل المنيو، تأكد من النت وجرّب مرة ثانية',errNet:'صار خطأ في الاتصال، جرّب مرة ثانية',retry:'حاول مرة ثانية',
+     tagPre:'بالتعاون مع ',paying:'جاري تحويلك للدفع…',payPh:'عرض حالة الطلب',payPhNote:'طلبك محفوظ. أكمل الدفع عندما تصبح بوابة الدفع متاحة، أو تابع حالة الطلب.',
+     stPendingH:'جاري تأكيد الدفع',stPendingP:'ننتظر تأكيد البنك، الصفحة تتحدث لحالها.',stFailedH:'ما اكتمل الدفع',stFailedP:'ما انخصم منك شي. تقدر تطلب من جديد.',
+     stExpiredH:'انتهت مهلة الدفع',stExpiredP:'ما اكتمل الدفع في الوقت، ابدأ طلب جديد.',stCancelledH:'تم إلغاء الطلب',stCancelledP:'لأي استفسار كلّمنا واتساب ومعك رقم الطلب.',
+     startOver:'ابدأ طلب جديد',lblBranch:'الفرع',errBranch:'اختر الفرع',pickBranch:'اختر الفرع',pickTitle:'اختر مدرستك',pickSub:'اختر المدرسة عشان تشوف منيوها وتطلب',pickNone:'ما فيه مدارس متاحة حالياً',pickLink:'اختر مدرسة',nfTitle:'المدرسة غير موجودة',nfSub:'تأكد من الرابط، أو اختر مدرستك من القائمة.',noDates:'ما فيه أيام متاحة للطلب حالياً، كلّمنا واتساب',notFound:'ما لقينا الطلب، تأكد من الرابط',
+     langBtn:'EN',title:'جرينولا · وجبات المدارس'},
+ en:{tag:'In partnership with Bilingual Learning Schools',h1:'Healthy kids start<br>with <span class="hl">their meal</span>',sub:'Balanced, calorie-counted meals that keep them energised and focused.',
+     ctaStart:'Choose your child\'s meals',back:'Back',s2h1:'You and your children',hiBack:'Welcome, {n}',s2sub:'We only use your details if we need to confirm something about the order.',
+     lblName:'Parent name',phName:'Ahmed Mohammed',errName:'Enter your name',lblPhone:'Parent mobile',errPhone:'Enter a valid mobile starting with 5',
+     addKidH:'Add your child',addKidBtn:'Add another child',s2note:'No account, no password. Your number is used for this order only. You can add more than one child and pay once.',
+     next:'Next',kidN:'Child',del:'Remove',kidName:'Child\'s full name',phKid:'Mohammed Ahmed Alali',kidNote:'Write the full name so it isn\'t mixed up with another child',errKidName:'Please enter at least first and father\'s name',grade:'Grade',pickGrade:'Select grade',errKids:'Enter each child\'s full name and grade',
+     s4h1:'Days & meals',cutoff:'Orders close at 12 midnight the day before',thisWeek:'This week',nextWeek:'Next week',after:'The week after',
+     tapPick:'Tap to choose their meal',pick:'Choose',pickFor:'Choose for',done:'Done',main:'Main dish',addons:'Extras',salDes:'Salads & desserts',drinks:'Drinks',optional:'optional',
+     juiceLbl:'Juice',juiceName:'Almarai juice (small)',juiceSub:'Free with every main — optional',juiceNone:'No juice, thanks',juiceAsk:'Choose the juice',mealIncl:'Each meal: main dish + potatoes + juice',
+     kcal:'kcal',pro:'protein',carb:'carbs',fat:'fat',g:'g',clearDay:'Clear this day',nutri:'Nutrition per meal',allerg:'Allergens',none:'None',
+     addToOrder:'Add to order',total:'Total',totalVat:'Total incl. VAT',cur:'SAR',review:'Review order',s6sub:'Check everything before paying.',
+     s6note:'Orders can\'t be edited or cancelled from this link after payment. Need a change? Message us on WhatsApp.',payNow:'Pay now',payVia:'Paid via HyperPay · mada · Apple Pay · Visa',
+     payMethod:'Payment method',paySelect:'Choose a payment method',payAppleSub:'Fast and secure on your device',payMada:'mada',payMadaSub:'Saudi debit card',payCard:'Credit or debit card',
+     payTrust:'Secure payment — all data is encrypted',payTitle:'Complete payment',payTitleSub:'Pay securely with HyperPay',
+     payHint:'Enter your card details to pay',payHintApple:'Use Apple Pay to complete payment',payLoading:'Loading payment form…',paySecure:'Encrypted secure payment',
+     payPreparing:'Preparing payment…',payAppleBtn:'Pay {amount} with Apple Pay',payMadaBtn:'Pay {amount} with mada',payCardBtn:'Pay {amount} by card',
+     payBlockedH:'Could not start the payment session',payBlockedP:'We could not prepare the HyperPay form for this order. Try again or contact us.',
+     payApplePending:'Apple Pay: backend has not returned APPLEPAY yet — widget uses returned brands only.',
+     payRetry:'Retry payment',payWidgetErr:'Could not load the payment form. Please try again.',
+     payReturnFailed:'Payment was not completed. Your order is still awaiting payment — try again.',
+     payLoadingSession:'Preparing payment session…',
+     errNone:'Choose at least one meal',errMin:'Add at least one main dish, or make the order total at least {min} SAR',errEmpty:'No meals chosen for {n}. Continue without them?',and:' and ',
+     s7h1:'Order received',s7sub:'We\'ve got your child\'s meals. Each is prepared fresh on its day.',ordNo:'Order number',meal:'meals',day:'days',firstDel:'First delivery',
+     s7note:'For any change or question, message us on WhatsApp with your order number.',wa:'Message us on WhatsApp',tagline:'We live it together',footer:'Greenola · Riyadh · 0509988394',
+     loading:'One moment, loading the menu…',errMenu:'Couldn\'t load the menu. Check your connection and try again',errNet:'Connection problem, please try again',retry:'Try again',
+     tagPre:'In partnership with ',paying:'Taking you to payment…',payPh:'View order status',payPhNote:'Your order is saved. Finish payment when the gateway is available, or check the order status.',
+     stPendingH:'Confirming your payment',stPendingP:'Waiting for the bank to confirm. This page updates by itself.',stFailedH:'Payment not completed',stFailedP:'You were not charged. You can place the order again.',
+     stExpiredH:'Payment time ran out',stExpiredP:'The payment wasn\'t completed in time. Please start a new order.',stCancelledH:'Order cancelled',stCancelledP:'For any question, message us on WhatsApp with your order number.',
+     startOver:'Start a new order',lblBranch:'Branch',errBranch:'Choose the branch',pickBranch:'Choose the branch',pickTitle:'Choose your school',pickSub:'Pick your school to see its menu and order',pickNone:'No schools are available right now',pickLink:'Choose a school',nfTitle:'School not found',nfSub:'Check the link, or choose your school from the list.',noDates:'No days are open for ordering right now. Message us on WhatsApp',notFound:'Order not found, please check the link',
+     langBtn:'عربي',title:'Greenola · School meals'}
+};
+const t=k=>T[LANG][k]??k;
+const DAYNAMES=new Proxy({},{get:(_,i)=>DAYS_[LANG][i]});
+const MONTHS=new Proxy({},{get:(_,i)=>MONTHS_[LANG][i]});
+const gname=i=>{const g=GRADES[+i];return g?g[LANG]:'';};
+const dn=o=>LANG==='ar'?o.n:(o.ne||o.n);
+const dd=o=>LANG==='ar'?o.d:(o.de||o.d);
+const dtg=o=>LANG==='ar'?o.tg:(o.tge||o.tg);
+const tagPill=o=>dtg(o)?`<span class="tagp">${esc(dtg(o))}</span>`:'';
+const algLine=o=>(o.alg||[]).length?`<div class="algs">${o.alg.map(a=>`<span>${ALG[LANG][a]||a}</span>`).join('')}</div>`:'';
+/* add-ons whose sku names a drink go under مشروبات; everything else under سلطات وحلا */
+const DRINK_SKU=/^addon-(water|juice|apple|mango|orange|drink|laban|milk)/;
+/* sku juice-* = the optional, free juice row above the mains (data-driven: a school without juice-* items gets no row) */
+const JUICE_SKU=/^juice-/;
+/* prices can be fractional (juice 2.25): round to halalas, print without trailing zeros */
+const money=n=>String(Math.round((+n||0)*100)/100);
+function applyLang(){
+  const r=document.getElementById('root');
+  r.setAttribute('lang',LANG); r.setAttribute('dir',LANG==='ar'?'rtl':'ltr');
+  document.title=t('title');
+  document.querySelectorAll('[data-t]').forEach(e=>e.textContent=t(e.dataset.t));
+  document.querySelectorAll('[data-th]').forEach(e=>e.innerHTML=t(e.dataset.th));
+  document.querySelectorAll('[data-tp]').forEach(e=>e.placeholder=t(e.dataset.tp));
+  document.querySelectorAll('i.bck').forEach(e=>e.setAttribute('data-lucide',LANG==='ar'?'arrow-right':'arrow-left'));
+  document.querySelectorAll('i.fwd').forEach(e=>e.setAttribute('data-lucide',LANG==='ar'?'arrow-left':'arrow-right'));
+  const lb=document.getElementById('langbtn'); if(lb) lb.textContent=t('langBtn');
+  renderHiBack();
+  icons();
+}
+function setLang(l){
+  LANG=l; try{localStorage.setItem('lang',l);}catch(e){}
+  applyLang();
+  if(kids.length) renderKids();
+  if(DATES.length){renderStrip();renderPanel();}
+  if(sheetKid) renderMenuBody(sheetKid);
+  if(STATUS) renderStatus();
+  if(PICK_MODE&&$('#s0').classList.contains('on')) renderPicker();
+  renderBranches(); renderReviewSchool();
+  if($('#s6').classList.contains('on')) checkMinOrder();
+  if(PAY_METHOD) updatePayButton();
+}
+
+let parent={name:'',phone:''};
+let kids=[];
+let DATES=[];
+let activeDay=null;
+let activeKid=null;
+let sel={};           /* "kidId|date" -> {main:'m1', add:{a1:2}} */
+let openKey=null;
+let kidSeq=0;
+
+const $=s=>document.querySelector(s);
+const iso=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); /* تاريخ محلي، مش UTC */
+function fmtDay(s){const d=new Date(s+'T00:00:00');
+  return {dn:DAYNAMES[d.getDay()],dd:d.getDate()+' '+MONTHS[d.getMonth()]};}
+function icons(){if(window.lucide)lucide.createIcons();}
+
+function go(n){document.querySelectorAll('.screen').forEach(e=>e.classList.remove('on'));
+  $('#s'+n).classList.add('on');
+  $('.brandbar').style.display = (n===1) ? 'flex' : 'none';   /* الهيدر في صفحة البداية فقط */
+  if(n!==7) stopStatusPoll();
+  if(n===4 && DATES.length){renderStrip();renderPanel();}
+  $('.app').scrollTop=0; $('#s'+n).scrollTop=0; window.scrollTo(0,0); icons();}
+
+/* ---------- 2. parent + children (one screen) ---------- */
+function addKid(){kids.push({id:'k'+(++kidSeq),name:'',grade:''});renderKids();}
+function rmKid(id){kids=kids.filter(k=>k.id!==id);
+  Object.keys(sel).forEach(key=>{if(key.split('|')[0]===id)delete sel[key];});
+  if(!kids.length) return addKid();          /* deleting the last child leaves one blank card */
+  renderKids();}
+function renderKids(){
+  $('#kids').innerHTML=kids.map((k,i)=>`
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3>${t('kidN')} ${i+1}</h3>
+        <button class="btn-ghost" style="border:0;cursor:pointer;color:#EE7D46"
+          onclick="rmKid('${k.id}')">${t('del')}</button>
+      </div>
+      <div class="field" id="kf_${k.id}"><label>${t('kidName')} <span class="req">*</span></label>
+        <input type="text" value="${k.name}" placeholder="${t('phKid')}"
+          oninput="kids.find(x=>x.id==='${k.id}').name=this.value;this.closest('.field').classList.remove('err')">
+        <div class="fnote"><i data-lucide="info" width="14"></i><span>${t('kidNote')}</span></div></div>
+      <div class="field" style="margin-bottom:0"><label>${t('grade')} <span class="req">*</span></label>
+        <select onchange="kids.find(x=>x.id==='${k.id}').grade=this.value">
+          <option value="">${t('pickGrade')}</option>
+          ${GRADES.map((g,gi)=>`<option value="${gi}" ${String(k.grade)===String(gi)?'selected':''}>${g[LANG]}</option>`).join('')}
+        </select></div>
+    </div>`).join('');
+  icons();
+}
+/* الأرقام العربية ٠١٢٣٤٥٦٧٨٩ والفارسية تتحول تلقائياً لإنجليزي قبل الحفظ */
+function toEnDigits(v){
+  return String(v)
+    .replace(/[\u0660-\u0669]/g,d=>String.fromCharCode(d.charCodeAt(0)-0x0660+48))
+    .replace(/[\u06F0-\u06F9]/g,d=>String.fromCharCode(d.charCodeAt(0)-0x06F0+48))
+    .replace(/[^0-9]/g,'');
+}
+function normPhone(el){
+  const v=toEnDigits(el.value).slice(0,9);
+  if(el.value!==v){const p=el.selectionStart;el.value=v;try{el.setSelectionRange(p,p);}catch(e){}}
+}
+async function saveAll(){
+  const n=$('#pname').value.trim(), ph=toEnDigits($('#pphone').value);
+  $('#pphone').value=ph;
+  let ok=true;
+  $('#f-name').classList.toggle('err',!n); if(!n)ok=false;
+  const good=/^5[0-9]{8}$/.test(ph);
+  $('#f-phone').classList.toggle('err',!good); if(!good)ok=false;
+  if(!ok){window.scrollTo(0,0);return;}
+  const minW=(SCHOOL_INFO&&SCHOOL_INFO.min_name_words)||2;
+  const fullName=n=>n.trim().split(/\s+/).filter(Boolean).length>=minW;
+  let badName=false;
+  kids.forEach(k=>{const bad=!fullName(k.name); const f=$('#kf_'+k.id); if(f){f.classList.toggle('err',bad); const sp=f.querySelector('.fnote span'); if(sp)sp.textContent=bad?t('errKidName'):t('kidNote');} if(bad)badName=true;});
+  if(badName){const f=$('.field.err'); if(f)f.scrollIntoView({block:'center'}); return;}
+  if(kids.some(k=>k.grade==='')){alert(t('errKids'));return;}
+  parent={name:n,phone:ph};
+  if(!SCHOOL_INFO) toast(t('loading'));
+  try{ await ensureMenu(); }catch(e){ toast(e.code==='SCHOOL_NOT_FOUND'?e.msg:t('errMenu'),'bad'); return; }
+  renderBranches();
+  if(branchList().length>=2&&!BRANCH_SEL){ const f=$('#f-branch'); f.classList.add('err'); f.scrollIntoView({block:'center'}); return; }
+  saveParent();                                               /* all of screen 2 is valid: remember it on this phone */
+  if(!DATES.length) buildDates();
+  if(!DATES.length){ toast(t('noDates'),'bad'); return; }
+  if(!DATES.includes(activeDay)) activeDay=DATES[0];
+  purgeSel(); renderStrip(); renderPanel(); go(4);
+}
+
+/* ---------- 3. days + meals (one screen) ----------
+   DATES come from school-menu: computed on the server in Riyadh time
+   (tomorrow onward, school week days, minus holidays, rest of this
+   week + weeks_ahead). Dates whose cutoff already passed are dropped. */
+function buildDates(){
+  DATES=API_DATES.filter(d=>!d.closed).map(d=>d.iso);
+  activeDay=DATES[0];
+}
+/* الأسبوع يبدأ الأحد */
+function weekStart(dt){const x=new Date(dt+'T00:00:00');x.setDate(x.getDate()-x.getDay());return iso(x);}
+function weeksSpanned(){return new Set(DATES.map(weekStart)).size;}
+function purgeSel(){const ids=kids.map(k=>k.id);
+  Object.keys(sel).forEach(key=>{const [kid,dt]=key.split('|');
+    if(!ids.includes(kid)||!DATES.includes(dt))delete sel[key];});}
+function dayHas(dt){return kids.some(k=>lineTotal(k.id+'|'+dt)>0);}
+function dayHasAny(dt){return kids.some(k=>lineTotal(k.id+'|'+dt)>0);}
+function renderStrip(){
+  const cell=dt=>{const f=fmtDay(dt),d=new Date(dt+'T00:00:00');
+    return `<button class="day ${activeDay===dt?'act':''} ${dayHas(dt)?'has':''}" onclick="pickDay('${dt}')">
+      <span class="dot"></span><b>${LANG==='ar'?f.dn:f.dn.slice(0,3)}</b>
+      <span>${d.getDate()}</span><small>${LANG==='ar'?MONTHS[d.getMonth()]:MONTHS[d.getMonth()].slice(0,3)}</small></button>`;};
+  const groups={}; DATES.forEach(dt=>{(groups[weekStart(dt)]=groups[weekStart(dt)]||[]).push(dt);});
+  const thisWeek=weekStart(TODAY_R||iso(new Date()));
+  const keys=Object.keys(groups).sort();
+  $('#strip').innerHTML=keys.map((k,i)=>{
+    const lbl = k===thisWeek ? t('thisWeek') : (i===0||keys[i-1]===thisWeek ? t('nextWeek') : t('after'));
+    return `<div class="week"><div class="wl">${lbl}</div><div class="wd">${groups[k].map(cell).join('')}</div></div>`;
+  }).join('');
+  const act=$('#strip .day.act');
+  if(act) act.scrollIntoView({block:'nearest',inline:'center'});
+}
+function pickDay(dt){activeDay=dt;renderStrip();renderPanel();}
+function clearDay(kid){delete sel[kid+'|'+activeDay];refresh();}
+
+function kidMeals(id){let c=0;DATES.forEach(d=>{const v=sel[id+'|'+d];
+  if(v){for(const m in (v.mains||{}))c+=v.mains[m];for(const a in (v.add||{}))c+=v.add[a];}});return c;}
+
+/* كم نسخة من الصنف دا اتطلبت اليوم لكل الأولاد */
+function dayQty(id,kind){let c=0;kids.forEach(k=>{const v=sel[k.id+'|'+activeDay];
+  if(v&&v[kind])c+=(v[kind][id]||0);});return c;}
+function qtyFor(kid,id,kind){const v=sel[kid+'|'+activeDay];return (v&&v[kind]&&v[kind][id])||0;}
+
+function itemsLine(kid){
+  const v=sel[kid+'|'+activeDay]; if(!v)return '';
+  const out=[];
+  for(const m in (v.mains||{})){const d=MAINS.find(x=>x.id===m);out.push(dn(d)+(v.mains[m]>1?` × ${v.mains[m]}`:''));}
+  const j=juiceOf(v), jq=juiceQty(v);
+  if(j&&jq)out.push(dn(j)+(jq>1?` × ${jq}`:''));
+  for(const a in (v.add||{})){const x=ADDONS.find(y=>y.id===a);out.push(dn(x)+(v.add[a]>1?` × ${v.add[a]}`:''));}
+  return out.join(' · ');
+}
+
+function renderPanel(){
+  const f=fmtDay(activeDay);
+  const dt=$('#daytitle'); if(dt) dt.textContent=`${f.dn} · ${f.dd}`;
+  let h='';
+  kids.forEach(k=>{
+    const key=k.id+'|'+activeDay, tot=lineTotal(key);
+    h+=`<button class="kidrow ${tot?'has':''}" onclick="openMenu('${k.id}')">
+      <div class="kn">
+        <b>${k.name} <span>· ${gname(k.grade)}</span></b>
+        <small class="${tot?'has':''}">${tot?itemsLine(k.id):t('tapPick')}</small>
+      </div>
+      <div class="knr">${tot?`<span class="kt2">${money(tot)} ${t('cur')}</span>`:`<span class="kgo">${t('pick')}</span>`}
+        <i data-lucide="${LANG==='ar'?'chevron-left':'chevron-right'}" width="18"></i></div>
+    </button>`;
+  });
+  $('#panel').innerHTML=h;
+  $('#bar5').textContent=money(grandTotal());
+  const df=$('.dayfix');
+  if(df) document.documentElement.style.setProperty('--dayfixh', df.offsetHeight+'px');
+  icons();
+}
+function itemsLine(kid){
+  const v=sel[kid+'|'+activeDay]; if(!v)return '';
+  const out=[];
+  for(const m in (v.mains||{})){const d=MAINS.find(x=>x.id===m);out.push(dn(d)+(v.mains[m]>1?` × ${v.mains[m]}`:''));}
+  const j=juiceOf(v), jq=juiceQty(v);
+  if(j&&jq)out.push(dn(j)+(jq>1?` × ${jq}`:''));
+  for(const a in (v.add||{})){const x=ADDONS.find(y=>y.id===a);out.push(dn(x)+(v.add[a]>1?` × ${v.add[a]}`:''));}
+  return out.join(' · ');
+}
+/* juice: qty is derived (= mains qty that kid/day), never stored; v.juice keeps the flavour even at 0 mains */
+function juiceQty(v){let c=0;for(const m in ((v&&v.mains)||{}))c+=v.mains[m];return c;}
+function juiceOf(v){return (JUICES.length&&v&&v.juice&&JUICES.find(j=>j.id===v.juice))||null;}   /* null for JUICE_NONE */
+/* a flavour or "لا أرغب" was picked (a stale id of a juice no longer on the menu counts as not chosen) */
+function juiceChosen(v){return !!(v&&(v.juice===JUICE_NONE||juiceOf(v)));}
+/* kid/days that hold a main but have no juice choice yet (none when the school has no juice-* items) */
+function juiceMissing(onlyKid,onlyDay){
+  if(!JUICES.length)return [];
+  const out=[];
+  kids.forEach(k=>{if(onlyKid&&k.id!==onlyKid)return;
+    DATES.forEach(d=>{if(onlyDay&&d!==onlyDay)return;const v=sel[k.id+'|'+d];
+      if(v&&juiceQty(v)>0&&!juiceChosen(v))out.push({kid:k.id,day:d});});});
+  return out;
+}
+/* juice popup: asks each missing kid/day in turn; after the last choice runs next(). Closing it = stay, don't continue. */
+let JASK=null;
+function askJuice(list,next){JASK={list,next};showJuiceAsk();}
+function showJuiceAsk(){
+  const q=JASK&&JASK.list[0]; if(!q)return;
+  const k=kids.find(x=>x.id===q.kid), f=fmtDay(q.day);
+  $('#jsheet').innerHTML=`<div class="mhead"><div><b id="jtitle">${t('juiceAsk')}</b>
+      <small>${esc(k?k.name:'')} · ${f.dn} · ${f.dd}</small></div>
+      <button class="dx" style="position:static" onclick="closeJuiceAsk()" aria-label="close">&times;</button></div>
+    <div class="jopts">${JUICES.map(j=>`<button class="jopt" onclick="pickJuiceAsk('${j.id}')">${esc(dn(j))}</button>`).join('')}
+      <button class="jopt no" onclick="pickJuiceAsk('${JUICE_NONE}')">${t('juiceNone')}</button></div>`;
+  $('#bd3').classList.add('on'); $('#jsheet').classList.add('on'); $('#jsheet').scrollTop=0;
+}
+function pickJuiceAsk(id){
+  if(!JASK)return; const q=JASK.list.shift(), key=q.kid+'|'+q.day, v=sel[key];
+  if(v){v.juice=id; keepOrDrop(key,v);}
+  if(JASK.list.length){refresh();showJuiceAsk();return;}
+  const next=JASK.next; JASK=null; hideJuiceAsk(); refresh(); if(next)next();
+}
+function hideJuiceAsk(){$('#bd3').classList.remove('on');$('#jsheet').classList.remove('on');}
+function closeJuiceAsk(){JASK=null;hideJuiceAsk();}
+function lineTotal(k){const v=sel[k];if(!v)return 0;let t=0;
+  for(const m in (v.mains||{}))t+=MAINS.find(x=>x.id===m).p*v.mains[m];
+  for(const a in (v.add||{}))t+=ADDONS.find(x=>x.id===a).p*v.add[a];
+  const j=juiceOf(v); if(j)t+=j.p*juiceQty(v);
+  return Math.round(t*100)/100;}
+function grandTotal(){let t=0;kids.forEach(k=>DATES.forEach(d=>t+=lineTotal(k.id+'|'+d)));return Math.round(t*100)/100;}
+/* a day entry stays while it holds a main, an add-on or a remembered juice flavour */
+function keepOrDrop(key,v){
+  if(!Object.keys(v.mains||{}).length && !Object.keys(v.add||{}).length && !v.juice) delete sel[key]; else sel[key]=v;
+}
+function setJuice(kid,id){
+  const key=kid+'|'+activeDay, v=sel[key]||{mains:{},add:{}};
+  v.juice=id||null; keepOrDrop(key,v);
+  refresh();
+}
+function pickMain(kid,id){bumpMain(kid,id,1);}
+function bumpMain(kid,id,n){
+  const key=kid+'|'+activeDay, v=sel[key]||{mains:{},add:{}};
+  v.mains=v.mains||{}; v.mains[id]=Math.max(0,Math.min(5,(v.mains[id]||0)+n));
+  if(!v.mains[id])delete v.mains[id];
+  keepOrDrop(key,v);
+  refresh();
+}
+function bump(kid,id,n){
+  const key=kid+'|'+activeDay, v=sel[key]||{mains:{},add:{}};
+  v.add=v.add||{}; v.add[id]=Math.max(0,Math.min(5,(v.add[id]||0)+n));
+  if(!v.add[id])delete v.add[id];
+  keepOrDrop(key,v);
+  refresh();
+}
+
+let sheetKid=null;
+function refresh(){renderStrip();renderPanel();if(sheetKid)renderMenuBody(sheetKid);}
+function openMenu(kid){
+  sheetKid=kid;
+  $('#dsheet').innerHTML=`<div class="mhead"><div>
+      <b id="mtitle"></b><small id="msub"></small></div>
+      <button class="dx" style="position:static" onclick="closeMenu()">&times;</button></div>
+    <div id="mbody"></div>
+    <div class="mfoot"><button class="btn btn-primary btn-block" onclick="doneMenu()">
+      ${t('done')} <span id="mtot"></span></button></div>`;
+  renderMenuBody(kid);
+  $('#bd2').classList.add('on'); $('#dsheet').classList.add('on');
+  $('#dsheet').scrollTop=0;
+}
+function renderMenuBody(kid){
+  const k=kids.find(x=>x.id===kid); if(!k||!$('#mbody'))return;
+  const f=fmtDay(activeDay), key=kid+'|'+activeDay, v=sel[key]||{mains:{},add:{}}, tot=lineTotal(key);
+  $('#mtitle').textContent=`${t('pickFor')} ${k.name}`;
+  $('#msub').textContent=`${f.dn} · ${f.dd} · ${gname(k.grade)}`;
+  $('#mtot').textContent=tot?`· ${money(tot)} ${t('cur')}`:'';
+  let h='';
+  if(JUICES.length){
+    h+=`<div class="lbl" style="margin-top:0">${t('juiceLbl')}</div>
+    <div class="jrow" id="jrow">
+      <div class="jtx"><b>${t('juiceName')}</b><small>${t('juiceSub')}</small></div>
+      <select id="jsel" onchange="setJuice('${kid}',this.value)">
+        <option value="" disabled ${juiceChosen(v)?'':'selected'}>---------</option>
+        ${JUICES.map(j=>`<option value="${j.id}" ${v.juice===j.id?'selected':''}>${esc(dn(j))}</option>`).join('')}
+        <option value="${JUICE_NONE}" ${v.juice===JUICE_NONE?'selected':''}>${t('juiceNone')}</option>
+      </select>
+    </div>
+    <div class="hint">${t('mealIncl')}</div>`;
+    h+=`<div class="lbl">${t('main')}</div>`;
+  } else h+=`<div class="lbl" style="margin-top:0">${t('main')}</div>`;
+  h+=MAINS.map(m=>{const q=(v.mains&&v.mains[m.id])||0;
+    return `<div class="om ${q?'sel':''}" ${q?'':`onclick="pickMain('${kid}','${m.id}')"`}>
+      <img src="${m.img}" alt="" loading="lazy"
+           onclick="event.stopPropagation();openDish('${m.id}','${kid}')">
+      <div class="nm"><b>${dn(m)}</b><small>${dd(m)}</small>
+        <div class="macs">
+          <div class="mc k"><b>${m.kcal}</b><span>${t('kcal')}</span></div>
+          <div class="mc p"><b>${m.pro}${t('g')}</b><span>${t('pro')}</span></div>
+          <div class="mc c"><b>${m.carb}${t('g')}</b><span>${t('carb')}</span></div>
+          <div class="mc f"><b>${m.fat}${t('g')}</b><span>${t('fat')}</span></div>
+        </div>
+      </div>
+      <div class="side">${q?`<div class="stp">
+          <button onclick="event.stopPropagation();bumpMain('${kid}','${m.id}',-1)">&minus;</button>
+          <div class="q">${q}</div>
+          <button onclick="event.stopPropagation();bumpMain('${kid}','${m.id}',1)">+</button></div>`
+        :`<div class="pr">${money(m.p)} ${t('cur')}</div><div class="addbtn">+</div>`}</div></div>`;}).join('');
+  const addCard=x=>{const q=(v.add&&v.add[x.id])||0;
+    return `<div class="om oad ${q?'sel':''}">
+      <img src="${x.img}" alt="" loading="lazy" draggable="false">
+      <div class="nm"><b>${dn(x)}</b>${dd(x)?`<small>${dd(x)}</small>`:''}${algLine(x)}</div>
+      <div class="side"><div class="pr">${money(x.p)} ${t('cur')}</div>
+        <div class="stp">
+        <button onclick="bump('${kid}','${x.id}',-1)" ${q?'':'disabled'}>&minus;</button>
+        <div class="q">${q}</div>
+        <button onclick="bump('${kid}','${x.id}',1)">+</button></div></div></div>`;};
+  const opt=`<span style="font-weight:400;color:#8A9994">· ${t('optional')}</span>`;
+  const food=ADDONS.filter(x=>!x.drink), drinks=ADDONS.filter(x=>x.drink);
+  if(food.length) h+=`<div class="lbl">${t('salDes')} ${opt}</div>`+food.map(addCard).join('');
+  if(drinks.length) h+=`<div class="lbl">${t('drinks')} ${opt}</div>`+drinks.map(addCard).join('');
+  if(tot) h+=`<button class="clear cl2" onclick="clearDay('${kid}')">${t('clearDay')}</button>`;
+  $('#mbody').innerHTML=h; icons();
+}
+/* تم: the day in this sheet needs a juice choice first (popup); × / backdrop still just close, review catches it */
+function doneMenu(){
+  const miss=sheetKid?juiceMissing(sheetKid,activeDay):[];
+  if(miss.length)return askJuice(miss,closeMenu);
+  closeMenu();
+}
+function closeMenu(){sheetKid=null;$('#bd2').classList.remove('on');$('#dsheet').classList.remove('on');renderPanel();}
+
+function openDish(mid,kid){
+  sheetKid=null;                       /* وضع التفاصيل، مش المنيو */
+  const m=MAINS.find(x=>x.id===mid);
+  $('#dsheet').innerHTML=`
+    <div class="dwrap">
+      <img class="dimg" src="${m.img}" alt="${dn(m)}">
+      <button class="dx" onclick="openMenu('${kid}')">&times;</button>
+    </div>
+    <div class="dbody">
+      <h2>${dn(m)}</h2>${tagPill(m)}
+      <p class="dd">${dd(m)} · ${money(m.p)} ${t('cur')}</p>
+      <div class="dsec">${t('nutri')}</div>
+      <div class="macs big">
+        <div class="mc k"><b>${m.kcal}</b><span>${t('kcal')}</span></div>
+        <div class="mc p"><b>${m.pro}${t('g')}</b><span>${t('pro')}</span></div>
+        <div class="mc c"><b>${m.carb}${t('g')}</b><span>${t('carb')}</span></div>
+        <div class="mc f"><b>${m.fat}${t('g')}</b><span>${t('fat')}</span></div>
+      </div>
+      <div class="dsec">${t('allerg')}</div>
+      <div class="alglist">${(m.alg||[]).map(a=>`<span>${ALG[LANG][a]||a}</span>`).join('')||`<span>${t('none')}</span>`}</div>
+      <button class="btn btn-primary btn-block" onclick="addFromSheet('${kid}','${m.id}')">
+        ${t('addToOrder')} · ${money(m.p)} ${t('cur')}</button>
+    </div>`;
+  $('#bd2').classList.add('on'); $('#dsheet').classList.add('on'); icons();
+}
+function closeDish(){$('#bd2').classList.remove('on');$('#dsheet').classList.remove('on');}
+/* back to the menu first, so the parent sees the day's picks (and the optional juice row) */
+function addFromSheet(kid,mid){openMenu(kid);bumpMain(kid,mid,1);}
+
+/* ---------- 6. cart ---------- */
+function cartHTML(){
+  return kids.map((k,i)=>{
+    const lines=DATES.filter(d=>lineTotal(k.id+'|'+d)>0);
+    if(!lines.length)return '';
+    const sub=lines.reduce((a,d)=>a+lineTotal(k.id+'|'+d),0);
+    return `<div class="grp c${i%4}">
+      <div class="gh"><b>${k.name}</b><span>${gname(k.grade)} · ${money(sub)} ${t('cur')}</span></div>
+      ${lines.map(d=>{const v=sel[k.id+'|'+d],f=fmtDay(d),j=juiceOf(v),jq=juiceQty(v);
+        return `<div class="line"><div class="d">${f.dn} · ${f.dd}</div>
+          ${Object.keys(v.mains||{}).map(mid=>{const m=MAINS.find(x=>x.id===mid),q=v.mains[mid];
+            return `<div class="it"><span>${dn(m)}${q>1?` × ${q}`:''}</span><span>${money(m.p*q)} ${t('cur')}</span></div>`;}).join('')}
+          ${j&&jq?`<div class="it"><span>${dn(j)} × ${jq}</span><span></span></div>`:''}
+          ${Object.keys(v.add||{}).map(a=>{const x=ADDONS.find(y=>y.id===a);
+            return `<div class="it add"><span>${dn(x)} × ${v.add[a]}</span><span>${money(x.p*v.add[a])} ${t('cur')}</span></div>`;
+          }).join('')}</div>`;}).join('')}
+    </div>`;}).join('');
+}
+function goCart(){
+  if(!grandTotal()){alert(t('errNone'));return;}
+  const empty=kids.filter(k=>kidMeals(k.id)===0).map(k=>k.name);
+  if(empty.length && !confirm(t('errEmpty').replace('{n}',empty.join(t('and')))))return;
+  const miss=juiceMissing(); if(miss.length)return askJuice(miss,showCart);
+  showCart();
+}
+function showCart(){
+  $('#cart').innerHTML=cartHTML(); $('#bar6').textContent=money(grandTotal()); renderReviewSchool(); resetPay(); checkMinOrder(); go(6);
+}
+/* min order, per ORDER: at least one main anywhere, or total >= MIN_TOTAL. Server enforces the same (MIN_ORDER). */
+function minOrderOk(){
+  return grandTotal()>=MIN_TOTAL || kids.some(k=>DATES.some(d=>{const v=sel[k.id+'|'+d];return v&&Object.keys(v.mains||{}).length;}));
+}
+function checkMinOrder(){
+  const ok=minOrderOk(), m=$('#minerr');
+  if(m) m.textContent=ok?'':t('errMin').replace('{min}',MIN_TOTAL);
+  updatePayButton(ok);
+  return ok;
+}
+function updatePayButton(minOk){
+  const b=$('#paybtn'), lbl=$('#payBtnLabel'); if(!b)return;
+  const ok=minOk!=null?minOk:minOrderOk();
+  const amount=money(grandTotal());
+  b.classList.toggle('cta-black', PAY_METHOD==='apple_pay'||PAY_METHOD==='card');
+  if(!ok){ b.disabled=true; if(lbl){lbl.dataset.t='paySelect'; lbl.textContent=t('paySelect');} return; }
+  if(!PAY_METHOD){ b.disabled=true; if(lbl){lbl.dataset.t='paySelect'; lbl.textContent=t('paySelect');} return; }
+  b.disabled=false;
+  const key=PAY_METHOD==='apple_pay'?'payAppleBtn':PAY_METHOD==='mada'?'payMadaBtn':'payCardBtn';
+  if(lbl){ lbl.dataset.t=key; lbl.textContent=t(key).replace('{amount}',amount+' '+t('cur')); }
+}
+
+/* ---------- live backend helpers ---------- */
+let toastT=null;
+function toast(msg,kind){
+  const el=$('#toast'); if(!el)return;
+  el.textContent=msg; el.classList.toggle('bad',kind==='bad'); el.classList.add('on');
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('on'),kind==='bad'?5000:2500);
+}
+/* fetch an Edge Function; throws {code,msg} with the message in the current language */
+async function api(path,opts={}){
+  let r,j=null;
+  try{
+    r=await fetch(API+'/'+path,{...opts,headers:{'Content-Type':'application/json',...(opts.headers||{})}});
+    try{ j=await r.json(); }catch(e){}
+  }catch(e){ console.warn('[school] network',path,e); throw {code:'NET',msg:t('errNet')}; }
+  if(!r.ok){
+    console.warn('[school] api error',path,r.status,j);
+    throw {code:(j&&j.code)||'SERVER',msg:(j&&(LANG==='en'?j.error_en:j.error_ar))||(j&&j.error)||t('errNet'),detail:j&&j.detail};
+  }
+  return j;
+}
+async function loadMenu(){
+  const r=await api('school-menu?s='+encodeURIComponent(SCHOOL)+'&lang='+LANG+MENU_REGION);
+  SCHOOL_INFO=r.school;
+  MIN_TOTAL=r.settings&&r.settings.min_order_total!=null?Number(r.settings.min_order_total):24;
+  API_DATES=r.dates||[];
+  TODAY_R=(r.server_time_riyadh||'').slice(0,10)||null;
+  const img=i=>i.image_url||('assets/dishes/'+(i.sku||'')+'.webp');
+  MAINS=(r.items||[]).filter(i=>i.kind==='main').map(i=>({id:i.id,sku:i.sku,img:img(i),alg:i.allergens||[],
+    n:i.name_ar,ne:i.name_en,d:i.desc_ar||'',de:i.desc_en||'',p:+i.price,tg:i.tag_ar||'',tge:i.tag_en||'',
+    kcal:i.kcal??'-',pro:i.protein_g??'-',carb:i.carbs_g??'-',fat:i.fat_g??'-'}));
+  ADDONS=(r.items||[]).filter(i=>i.kind==='addon'&&!JUICE_SKU.test(i.sku||'')).map(i=>({id:i.id,sku:i.sku,img:img(i),alg:i.allergens||[],
+    n:i.name_ar,ne:i.name_en,d:i.desc_ar||'',de:i.desc_en||'',p:+i.price,tg:i.tag_ar||'',tge:i.tag_en||'',
+    drink:DRINK_SKU.test(i.sku||'')}));
+  JUICES=(r.items||[]).filter(i=>i.kind==='addon'&&JUICE_SKU.test(i.sku||'')).map(i=>({id:i.id,sku:i.sku,
+    n:i.name_ar,ne:i.name_en,p:+i.price}));
+  applySchool();
+}
+let MENU_P=null;
+function ensureMenu(force){
+  if(force) MENU_P=null;
+  if(!MENU_P) MENU_P=loadMenu().catch(e=>{MENU_P=null;throw e;});
+  return MENU_P;
+}
+function heroHTML(txt){
+  const e=String(txt).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  return e.replace(/\[([^\]]+)\]/g,'<span class="hl">$1</span>').replace(/\r?\n/g,'<br>');
+}
+/* hero photo: preload, then swap in (fallback = generic Greenola bag, no school crest) */
+const HERO_FALLBACK='assets/photos/bag-hero.png';
+/* guess=true: first-visit try of the fixed path before the API answers; if it fails, wait for the API quietly */
+function setHero(url,guess){
+  const img=$('#heroImg'); if(!img)return;
+  const want=url||HERO_FALLBACK;
+  if(stripV(img.dataset.src)===stripV(want))return;   /* same file (ignoring ?v=): no reload */
+  img.dataset.src=want;
+  const pre=new Image();
+  pre.onload=()=>{ if(img.dataset.src!==want)return; img.classList.toggle('generic',want===HERO_FALLBACK); img.src=want; const sc=SCHOOL_INFO||BRAND_CACHED; img.alt=sc?('جرينولا × '+sc.name_ar):''; img.classList.add('on'); };
+  pre.onerror=()=>{ if(img.dataset.src!==want)return; img.dataset.src=''; if(guess)return; console.warn('[school] hero image failed',want); if(want!==HERO_FALLBACK) setHero(null); };
+  pre.src=want;
+  if(!guess) try{ localStorage.setItem('hero:'+SCHOOL,want); }catch(e){}
+}
+/* header tag, page title and school logo from the API */
+/* ---------- returning parent: screen 2 pre-filled on the same phone ----------
+   gs_parent_<school> = {v:1, saved_at, branch, name, phone, kids:[{name, grade_ar}]}
+   Saved in saveAll() each time screen 2 passes ALL validation on "التالي" (paid or not: hesitant parents are remembered too);
+   every later "التالي" overwrites it and restarts the 180-day clock. Never saved on keystrokes or failed validation.
+   Grades are stored as their Arabic label so a GRADES reorder can't shift them. Phone only, nothing in the database.
+   localStorage failures never block ordering. (The old paid-only gs_parent_pending_<school> key is deleted on boot.) */
+const PARENT_KEY=()=>'gs_parent_'+SCHOOL;
+const PARENT_TTL=180*864e5;
+let SAVED_BRANCH='', HI_NAME='';
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){console.warn('[school] storage read',k,e);return null;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn('[school] storage write',k,e);}}
+function lsDel(k){try{localStorage.removeItem(k);}catch(e){}}
+function parentSnapshot(){
+  const br=chosenBranch();
+  return {branch:br?br.id:(BRANCH_SEL||''),name:parent.name,phone:parent.phone,
+          kids:kids.filter(k=>k.name.trim()).map(k=>({name:k.name.trim(),grade_ar:(GRADES[+k.grade]||{}).ar||''}))};
+}
+function saveParent(){ if(SCHOOL) lsSet(PARENT_KEY(),{v:1,saved_at:Date.now(),...parentSnapshot()}); }
+function loadSavedParent(){
+  if(!SCHOOL)return null;
+  const r=lsGet(PARENT_KEY()); if(!r)return null;
+  if(r.v!==1||!(Date.now()-(+r.saved_at||0)<PARENT_TTL)){ lsDel(PARENT_KEY()); return null; }
+  return r;
+}
+/* silent pre-fill of screen 2; everything stays editable and saveAll() validates as usual */
+function applySavedParent(r){
+  if(!r)return;
+  const pn=$('#pname'), pp=$('#pphone');
+  if(pn&&r.name) pn.value=String(r.name);
+  if(pp&&r.phone){ pp.value=String(r.phone); normPhone(pp); }
+  SAVED_BRANCH=String(r.branch||'');
+  const ks=(Array.isArray(r.kids)?r.kids:[]).filter(k=>k&&String(k.name||'').trim());
+  if(ks.length){
+    kids=ks.map(k=>{const gi=GRADES.findIndex(g=>g.ar===k.grade_ar);
+      return {id:'k'+(++kidSeq),name:String(k.name).trim(),grade:gi>=0?String(gi):''};});
+    renderKids();
+  }
+  HI_NAME=String(r.name||'').trim().split(/\s+/)[0]||'';
+  renderHiBack();
+}
+function renderHiBack(){
+  const el=document.getElementById('hiBack'); if(!el)return;
+  el.hidden=!HI_NAME; el.innerHTML=HI_NAME?t('hiBack').replace('{n}',esc(HI_NAME)):'';
+}
+
+/* ---------- branches (a school with 2+ active branches must pick one; ?b=<slug> pre-selects) ---------- */
+const BRANCH_PRE=(QS.get('b')||'').trim().toLowerCase();
+let BRANCH_SEL='', BRANCH_PRE_DONE=false;   /* ?b= pre-selects once; a parent may still change or clear it */
+const branchList=()=>(SCHOOL_INFO&&SCHOOL_INFO.branches)||[];
+function renderBranches(){
+  const list=branchList(), f=$('#f-branch'), sel=$('#pbranch'); if(!f||!sel)return;
+  if(!BRANCH_PRE_DONE&&list.length){ BRANCH_PRE_DONE=true;
+    if(BRANCH_PRE){ const b=list.find(x=>x.slug===BRANCH_PRE); if(b) BRANCH_SEL=b.id; else console.warn('[school] unknown branch in ?b=',BRANCH_PRE); }
+    /* returning parent: their last branch, only if ?b= didn't pick one and it is still one of this school's branches */
+    if(!BRANCH_SEL&&SAVED_BRANCH&&list.some(x=>x.id===SAVED_BRANCH)) BRANCH_SEL=SAVED_BRANCH; }
+  if(list.length<2){ f.hidden=true; return; }
+  f.hidden=false;
+  sel.innerHTML=`<option value="">${t('pickBranch')}</option>`+list.map(b=>`<option value="${b.id}" ${b.id===BRANCH_SEL?'selected':''}>${LANG==='ar'?b.name_ar:(b.name_en||b.name_ar)}</option>`).join('');
+}
+function chosenBranch(){ const list=branchList(); return list.length===1?list[0]:list.find(b=>b.id===BRANCH_SEL)||null; }
+function renderReviewSchool(){
+  const el=$('#s6school'); if(!el||!SCHOOL_INFO)return; const br=chosenBranch();
+  el.innerHTML=schoolBranchHTML(SCHOOL_INFO.name_ar,SCHOOL_INFO.name_en,br&&br.name_ar,br&&br.name_en);
+}
+function schoolBranchHTML(schoolAr,schoolEn,brAr,brEn){
+  const sc=LANG==='ar'?schoolAr:(schoolEn||schoolAr), br=LANG==='ar'?brAr:(brEn||brAr);
+  return sc?`${sc}${br?`<span>${br}</span>`:''}`:'';
+}
+/* school logo: swap src only when the URL really changes (ignoring ?v=); hide the slot when missing or broken */
+const stripV=u=>String(u||'').replace(/[?&]v=[^&]*/,'').replace(/\?$/,'');
+function setLogo(url,alt){
+  const lg=$('#schoolLogo'); if(!lg)return;
+  if(!url){ lg.hidden=true; lg.removeAttribute('src'); lg.dataset.base=''; return; }
+  if(alt) lg.alt=alt;
+  if(lg.dataset.base===stripV(url)) return;          /* same file already showing/loading: no reload, no flicker */
+  lg.dataset.base=stripV(url);
+  lg.onerror=()=>{ lg.hidden=true; };
+  lg.src=(SCHOOL&&lg.dataset.base===LOGO_GUESS(SCHOOL))?LOGO_GUESS(SCHOOL):url;   /* same URL the <head> preloaded */
+  lg.hidden=false;
+}
+/* branding-only snapshot per school (never menu items, dates or prices), shown instantly on the next visit */
+const BRAND_KEYS=['id','name_ar','name_en','logo_url','hero_image_url','hero_tag_ar','hero_tag_en','hero_title_ar','hero_title_en','hero_sub_ar','hero_sub_en'];
+let BRAND_CACHED=null;
+function readBrand(){
+  try{ const o=JSON.parse(localStorage.getItem('gs_school_'+SCHOOL)||'null'); return o&&o.v&&o.v.id===SCHOOL?o.v:null; }catch(e){ return null; }
+}
+function saveBrand(sc){
+  const v={}; BRAND_KEYS.forEach(k=>{ v[k]=sc[k]??null; });
+  try{ localStorage.setItem('gs_school_'+SCHOOL,JSON.stringify({t:Date.now(),v})); }catch(e){}
+}
+function applyBranding(sc){
+  T.ar.tag=sc.hero_tag_ar||(T.ar.tagPre+sc.name_ar); T.en.tag=sc.hero_tag_en||(T.en.tagPre+sc.name_en);
+  /* editable hero text from the admin (new line = <br>, [word] = highlighted); else the built-in copy */
+  if(sc.hero_title_ar) T.ar.h1=heroHTML(sc.hero_title_ar);
+  if(sc.hero_title_en) T.en.h1=heroHTML(sc.hero_title_en);
+  if(sc.hero_sub_ar) T.ar.sub=sc.hero_sub_ar;
+  if(sc.hero_sub_en) T.en.sub=sc.hero_sub_en;
+  T.ar.title='جرينولا × '+sc.name_ar+' · طلب وجبات'; T.en.title='Greenola × '+sc.name_en+' · Meal ordering';
+  setLogo(sc.logo_url,sc.name_ar+' · '+sc.name_en);
+  setHero(sc.hero_image_url);
+  applyLang();
+}
+function applySchool(){
+  const sc=SCHOOL_INFO; if(!sc)return;
+  applyBranding(sc);
+  saveBrand(sc);
+  renderBranches();
+}
+
+/* ---------- 7. pay (HyperPay via DEV school-orders checkout) ---------- */
+let PAY_METHOD=null;           /* apple_pay | mada | card — Apple Pay brands await backend confirmation */
+let PAY_ACTIVE=null;           /* order object currently on s8 */
+let PAY_IN_FLIGHT=false;       /* prevent duplicate checkout submissions */
+/* Align with backend cart dedupe (25 min). Do not use a longer conflicting cache. */
+const SCH_ORDER_TTL_MS=(window.SchoolOrdersApi&&SchoolOrdersApi.DEDUPE_TTL_MS)||(25*60e3);
+
+function moneyLabel(amount, currency){
+  const cur=(currency&&String(currency).trim())||null;
+  if(cur) return `${amount} ${cur}`;
+  return `${amount} ${t('cur')}`;
+}
+function displayCurrency(currency){
+  const cur=(currency&&String(currency).trim())||null;
+  return cur||t('cur');
+}
+
+/* Brands: prefer server supportedBrands. Never inject APPLEPAY unless backend returns it. */
+function brandsForMethod(method, supportedBrands){
+  if(supportedBrands&&String(supportedBrands).trim()) return String(supportedBrands).trim();
+  if(method==='mada') return 'MADA VISA MASTER';
+  if(method==='card') return 'VISA MASTER MADA';
+  /* apple_pay without confirmed brands: fall back to card brands, not APPLEPAY */
+  return 'VISA MASTER MADA';
+}
+function brandsIncludeApplePay(brands){
+  return /\bAPPLEPAY\b/i.test(String(brands||''));
+}
+function isPaymentWidgetsUrl(url){
+  try{ return /\/v1\/paymentWidgets\.js$/i.test(new URL(url).pathname); }
+  catch(e){ return /paymentWidgets\.js/i.test(String(url||'')); }
+}
+function extractCheckoutId(checkoutId, paymentUrl){
+  if(checkoutId!=null&&String(checkoutId).trim()) return String(checkoutId).trim();
+  if(!paymentUrl) return null;
+  try{
+    const id=new URL(paymentUrl).searchParams.get('checkoutId');
+    if(id&&id.trim()) return id.trim();
+  }catch(e){
+    const m=String(paymentUrl).match(/checkoutId=([^&]+)/);
+    if(m&&m[1]) try{ return decodeURIComponent(m[1]); }catch(x){ return m[1]; }
+  }
+  return null;
+}
+/* Prefer backend paymentUrl (eu-prod / eu-test host). Do not rewrite to a wrong host. */
+function resolvePaymentWidgetUrl(paymentUrl, checkoutId){
+  const trimmed=(paymentUrl||'').trim();
+  if(trimmed&&isPaymentWidgetsUrl(trimmed)) return trimmed;
+  if(trimmed&&/paymentWidgets\.js/i.test(trimmed)) return trimmed;
+  const id=extractCheckoutId(checkoutId, paymentUrl);
+  /* Last-resort rebuild only if backend omitted a usable URL — production widget host. */
+  return id?('https://eu-prod.oppwa.com/v1/paymentWidgets.js?checkoutId='+encodeURIComponent(id)):null;
+}
+function hasPaymentSession(ord){
+  return !!(ord&&resolvePaymentWidgetUrl(ord.paymentUrl, ord.checkoutId));
+}
+function persistSchOrder(ord){
+  try{ sessionStorage.setItem('sch_order',JSON.stringify(ord)); }catch(e){}
+}
+function readSchOrder(){
+  try{ return JSON.parse(sessionStorage.getItem('sch_order')||'null'); }catch(e){ return null; }
+}
+function clearSchOrderPaymentSession(ord){
+  if(!ord) return ord;
+  ord.paymentUrl=null; ord.checkoutId=null; ord.supportedBrands=null;
+  return ord;
+}
+
+function selectPayMethod(m){
+  PAY_METHOD=m;
+  document.querySelectorAll('#payMethods .pay-method').forEach(el=>{
+    const on=el.dataset.method===m;
+    el.classList.toggle('selected',on);
+    el.setAttribute('aria-checked',on?'true':'false');
+  });
+  updatePayButton();
+  icons();
+}
+
+function buildPayload(){
+  const lines=[];
+  kids.forEach(k=>DATES.forEach(d=>{
+    const key=k.id+'|'+d, v=sel[key];
+    if(!v||lineTotal(key)<=0)return;
+    for(const m in (v.mains||{})) lines.push({kid_tmp_id:k.id,date:d,item_id:m,qty:v.mains[m]});
+    const j=juiceOf(v), jq=juiceQty(v);
+    if(j&&jq>0) lines.push({kid_tmp_id:k.id,date:d,item_id:j.id,qty:jq});
+    for(const a in (v.add||{})) if(v.add[a]>0) lines.push({kid_tmp_id:k.id,date:d,item_id:a,qty:v.add[a]});
+  }));
+  const br=chosenBranch();
+  return {school_id:SCHOOL,branch_id:br?br.id:undefined,lang:LANG,
+          payment_method:PAY_METHOD||undefined,
+          parent:{name:parent.name,phone:parent.phone},
+          kids:kids.map(k=>({tmp_id:k.id,name:k.name.trim(),grade_idx:+k.grade})),lines};
+}
+function returnUrl(orderNo){
+  return schoolHome()+(PATH_SLUG?'?':'&')+'order='+encodeURIComponent(orderNo);
+}
+function resetPay(){
+  PAY_METHOD=null;
+  PAY_IN_FLIGHT=false;
+  document.querySelectorAll('#payMethods .pay-method').forEach(el=>{
+    el.classList.remove('selected'); el.setAttribute('aria-checked','false');
+  });
+  const b=$('#paybtn'); if(b){b.style.display='';}
+  const ph=$('#payph'); if(ph) ph.innerHTML='';
+  updatePayButton();
+}
+function backFromPayment(){
+  cleanupHyperPayWidget();
+  PAY_ACTIVE=null;
+  PAY_IN_FLIGHT=false;
+  go(6);
+  updatePayButton();
+}
+
+async function fetchOrderStatus(orderNo){
+  const api=window.SchoolOrdersApi;
+  if(!api||typeof api.status!=='function') throw {code:'API_MISSING',msg:t('errNet')};
+  const raw=await api.status(orderNo, LANG);
+  return api.normalizeStatus(raw);
+}
+
+/**
+ * Single-shot checkout: creates order + HyperPay session (POST /checkout).
+ * Backend dedupes identical carts ~25 minutes (same order_no + checkoutId).
+ * Does not send client totals. Replaces school-checkout + separate session create.
+ */
+async function checkoutAndPay(method){
+  const api=window.SchoolOrdersApi;
+  if(!api||typeof api.checkout!=='function') throw {code:'API_MISSING',msg:t('errNet')};
+
+  const body=buildPayload();
+  body.payment_method=method;
+  if(!body.lines.length) throw {code:'NONE',msg:t('errNone')};
+  /* Never send client totals — backend prices the cart. */
+  delete body.total; delete body.vat; delete body.amount; delete body.currency;
+
+  const sig=JSON.stringify({...body, payment_method:undefined});
+  const cached=readSchOrder();
+  if(cached&&cached.sig===sig&&cached.order_no&&(Date.now()-(cached.at||0))<SCH_ORDER_TTL_MS){
+    try{
+      const st=await fetchOrderStatus(cached.order_no);
+      if(st.status==='paid') return {ord:cached, alreadyPaid:true};
+      if(st.status==='pending'&&hasPaymentSession(cached)){
+        cached.payment_method=method;
+        return {ord:cached, alreadyPaid:false, reused:true};
+      }
+      /* failed/expired (or pending without session): POST again.
+         Backend may still return the SAME checkoutId within the dedupe window —
+         that is NOT guaranteed to be a fresh HyperPay session (needs backend clarification). */
+      if(st.status==='failed'||st.status==='expired'||st.status==='cancelled'){
+        try{ sessionStorage.removeItem('sch_order'); }catch(e){}
+      }
+    }catch(e){
+      if(e.code==='ORDER_NOT_FOUND'){ try{ sessionStorage.removeItem('sch_order'); }catch(x){} }
+      else throw e;
+    }
+  }
+
+  const data=await api.checkout(body, LANG);
+  const ord=api.orderFromCheckout(data, {payment_method:method, sig});
+  if(!ord.order_no||!hasPaymentSession(ord)){
+    throw {code:'SESSION_EMPTY',msg:t('payWidgetErr'),detail:data};
+  }
+  persistSchOrder(ord);
+  return {ord, alreadyPaid:false, reused:false};
+}
+
+async function pay(){
+  if(localReadonlyActive()){
+    toast(t('errLocalReadonly'),'bad');
+    updatePayButton();
+    return;
+  }
+  const btn=$('#paybtn'); if(!btn||btn.disabled)return;
+  if(PAY_IN_FLIGHT) return;
+  if(!checkMinOrder())return;
+  if(!PAY_METHOD){ toast(t('paySelect'),'bad'); return; }
+  const body=buildPayload();
+  if(!body.lines.length){ toast(t('errNone'),'bad'); return; }
+
+  /* Apple Pay: UI kept; session brands come from backend (currently no APPLEPAY). */
+  if(PAY_METHOD==='apple_pay'){
+    console.info('[school]', t('payApplePending'));
+  }
+
+  const lbl=$('#payBtnLabel');
+  const prevLabel=lbl?lbl.textContent:'';
+  PAY_IN_FLIGHT=true;
+  btn.disabled=true;
+  if(lbl) lbl.textContent=t('payPreparing');
+
+  try{
+    showPaymentLoading({order_no:'…', total:'…', currency:null});
+    const result=await checkoutAndPay(PAY_METHOD);
+    if(result.alreadyPaid){
+      try{ sessionStorage.removeItem('sch_order'); }catch(e){}
+      openStatus(result.ord.order_no);
+      return;
+    }
+    const ord=result.ord;
+    PAY_ACTIVE=ord;
+    persistSchOrder(ord);
+    startPayment(ord);
+  }catch(e){
+    cleanupHyperPayWidget();
+    go(6);
+    toast(e.msg||t('errNet'),'bad');
+    if(e.code==='DATE_CLOSED'||e.code==='ITEM'){
+      try{ await ensureMenu(true); }catch(_){}
+      buildDates(); purgeSel(); go(4);
+    } else if(['PHONE','PARENT_NAME','KID_NAME','KID_GRADE','BRANCH','BRANCH_REQUIRED'].includes(String(e.code))){
+      if(e.code==='BRANCH'){ BRANCH_SEL=''; try{ await ensureMenu(true); }catch(_){} renderBranches(); }
+      go(2); if(String(e.code).startsWith('BRANCH')) $('#f-branch').classList.add('err');
+    }
+  }finally{
+    PAY_IN_FLIGHT=false;
+    if(lbl) lbl.textContent=prevLabel;
+    updatePayButton();
+  }
+}
+
+function retryPaymentFromScreen(){
+  if(PAY_IN_FLIGHT) return;
+  if(!PAY_ACTIVE||!PAY_ACTIVE.order_no){ go(6); updatePayButton(); return; }
+  /* Reuse cached session when still pending; otherwise POST checkout (backend may return same checkoutId). */
+  const method=PAY_METHOD||PAY_ACTIVE.payment_method||'card';
+  PAY_METHOD=method;
+  PAY_IN_FLIGHT=true;
+  showPaymentLoading(PAY_ACTIVE);
+  checkoutAndPay(method)
+    .then(result=>{
+      if(result.alreadyPaid){ openStatus(result.ord.order_no); return; }
+      PAY_ACTIVE=result.ord;
+      persistSchOrder(result.ord);
+      if(result.reused===false&&PAY_ACTIVE.checkoutId){
+        /* Fresh POST completed — may still be deduped identical checkoutId */
+      }
+      startPayment(result.ord);
+    })
+    .catch(e=>{
+      toast(e.msg||t('errNet'),'bad');
+      showPaymentBlocked(PAY_ACTIVE, returnUrl(PAY_ACTIVE.order_no), {code:e.code,msg:e.msg});
+    })
+    .finally(()=>{ PAY_IN_FLIGHT=false; updatePayButton(); });
+}
+
+function showPaymentLoading(ord){
+  PAY_ACTIVE=ord;
+  go(8);
+  renderPaySummary(ord);
+  cleanupHyperPayWidget();
+  const w=$('#hpWidgetWrap'), e=$('#hpError'), b=$('#hpBlocked'), m=$('#hpMockBanner'), ov=$('#hpOverlay');
+  if(w){ w.hidden=false; w.dataset.method=PAY_METHOD||ord.payment_method||'card'; }
+  if(e) e.hidden=true;
+  if(b) b.hidden=true;
+  if(m) m.hidden=true;
+  if(ov){ ov.classList.add('on'); const p=ov.querySelector('p'); if(p){ p.dataset.t='payLoadingSession'; p.textContent=t('payLoadingSession'); } }
+}
+
+function startPayment(ord){
+  const back=returnUrl(ord.order_no);
+  PAY_ACTIVE=ord;
+  go(8);
+  renderPaySummary(ord);
+  setMockBanner(!!ord._sessionMock);
+
+  if(ord._previewOnly){
+    showMockWidgetPreview(ord);
+    if(ord._forceWidgetError) showPaymentWidgetError(t('payWidgetErr'));
+    updatePayButton();
+    return;
+  }
+
+  const scriptSrc=resolvePaymentWidgetUrl(ord.paymentUrl, ord.checkoutId);
+  const checkoutId=extractCheckoutId(ord.checkoutId, ord.paymentUrl);
+  if(scriptSrc&&checkoutId){
+    if(!/eu-prod\.oppwa\.com|eu-test\.oppwa\.com|oppwa\.com/i.test(scriptSrc)){
+      console.warn('[school] unexpected paymentUrl host', scriptSrc);
+    }
+    mountHyperPayWidget({
+      scriptSrc,
+      checkoutId,
+      method:ord.payment_method||PAY_METHOD,
+      order:ord,
+      supportedBrands:ord.supportedBrands
+    });
+  } else {
+    showPaymentBlocked(ord, back, ord._payError||{code:'SESSION_EMPTY',msg:t('payWidgetErr')});
+  }
+  updatePayButton();
+}
+
+function setMockBanner(on){
+  const m=$('#hpMockBanner'); if(!m)return;
+  if(!on){ m.hidden=true; m.textContent=''; return; }
+  m.hidden=false;
+  m.textContent=t('payMockBanner');
+}
+
+function showMockWidgetPreview(ord){
+  cleanupHyperPayWidget();
+  const w=$('#hpWidgetWrap'), e=$('#hpError'), b=$('#hpBlocked'), ov=$('#hpOverlay'), form=$('#hpForm'), hint=$('#hpHint'), pills=$('#hpPills');
+  if(b) b.hidden=true;
+  if(e) e.hidden=true;
+  if(w){ w.hidden=false; w.dataset.method=ord.payment_method||PAY_METHOD||'card'; }
+  if(ov) ov.classList.remove('on');
+  const method=ord.payment_method||PAY_METHOD||'card';
+  const brands=brandsForMethod(method, ord.supportedBrands);
+  if(pills){
+    pills.innerHTML=brands.split(/\s+/).filter(Boolean).map(b=>`<span>${esc(b)}</span>`).join('')||'<span>VISA</span>';
+  }
+  if(hint){ hint.dataset.t='payHint'; hint.textContent=t('payHint'); }
+  if(form){
+    form.removeAttribute('action');
+    form.setAttribute('data-brands', brands);
+    form.innerHTML=`<div class="hp-mock-preview" style="padding:18px 8px;text-align:center">
+      <p style="font:700 14px Cairo;margin-bottom:8px">${esc(t('payMockPreview'))}</p>
+      <p style="font:400 12px Cairo;color:var(--ink-500);margin-bottom:12px">checkoutId: <b dir="ltr">${esc(ord.checkoutId||'—')}</b> · method: <b>${esc(method)}</b></p>
+      <button type="button" class="btn btn-outline btn-block" onclick="retryPaymentFromScreen()">${esc(t('payRetry'))}</button>
+    </div>`;
+  }
+}
+
+function renderPaySummary(ord){
+  const el=$('#hpSum'); if(!el)return;
+  el.innerHTML=
+    `<div class="row"><span>${t('ordNo')}</span><b dir="ltr">${esc(ord.order_no||'—')}</b></div>`+
+    `<div class="row total"><span>${t('totalVat')}</span><b dir="ltr">${esc(moneyLabel(ord.total!=null?ord.total:'—', ord.currency))}</b></div>`;
+}
+
+function showPaymentBlocked(ord, back, payError){
+  cleanupHyperPayWidget();
+  const w=$('#hpWidgetWrap'), e=$('#hpError'), b=$('#hpBlocked'), ov=$('#hpOverlay');
+  if(w) w.hidden=true;
+  if(e) e.hidden=true;
+  if(ov) ov.classList.remove('on');
+  setMockBanner(!!(payError&&payError.mock));
+  const msg=(payError&&payError.msg)||t('payBlockedP');
+  const code=payError&&payError.code?`<div class="tt" style="direction:ltr;opacity:.7">${esc(payError.code)}</div>`:'';
+  if(b){
+    b.hidden=false;
+    b.innerHTML=`<div class="pn">${t('ordNo')}<b>${esc(ord.order_no||'—')}</b></div>
+      <div class="go">${esc(t('payBlockedH'))}</div>
+      <p class="tt">${esc(msg)}</p>
+      ${code}
+      <button type="button" class="btn btn-primary btn-block" style="margin-top:12px" onclick="retryPaymentFromScreen()">${esc(t('payRetry'))}</button>
+      <a class="btn btn-outline btn-block" style="margin-top:8px" href="${esc(back)}">${esc(t('payPh'))}</a>
+      <button type="button" class="btn btn-outline btn-block" style="margin-top:8px" onclick="backFromPayment()">${esc(t('back'))}</button>`;
+  }
+  const paybtn=$('#paybtn'); if(paybtn){ paybtn.disabled=false; }
+  updatePayButton();
+}
+
+function showPaymentWidgetError(msg){
+  const e=$('#hpError'), w=$('#hpWidgetWrap'), ov=$('#hpOverlay');
+  if(ov) ov.classList.remove('on');
+  if(w) w.hidden=true;
+  if(e){
+    e.hidden=false;
+    e.innerHTML=`<p>${esc(msg||t('payWidgetErr'))}</p>
+      <button type="button" class="btn btn-primary btn-block" style="margin-top:12px" onclick="retryPaymentFromScreen()">${esc(t('payRetry'))}</button>
+      <button type="button" class="btn btn-outline btn-block" style="margin-top:8px" onclick="backFromPayment()">${esc(t('back'))}</button>`;
+  }
+  updatePayButton();
+}
+
+function cleanupHyperPayWidget(){
+  document.querySelectorAll('script[data-school-hyperpay="1"]').forEach(n=>n.remove());
+  const form=$('#hpForm'); if(form) form.innerHTML='';
+  if('wpwlOptions' in window) try{ delete window.wpwlOptions; }catch(e){ window.wpwlOptions=undefined; }
+  if(SCHOOL_WPWL_OBS){ try{ SCHOOL_WPWL_OBS.disconnect(); }catch(e){} SCHOOL_WPWL_OBS=null; }
+  const ov=$('#hpOverlay'); if(ov) ov.classList.remove('on');
+  const pills=$('#hpPills'); if(pills){ pills.hidden=false; pills.classList.remove('is-redundant'); }
+}
+
+function mountHyperPayWidget({scriptSrc, checkoutId, method, order, supportedBrands}){
+  const wrap=$('#hpWidgetWrap'), blocked=$('#hpBlocked'), err=$('#hpError'), form=$('#hpForm'), ov=$('#hpOverlay'), hint=$('#hpHint'), pills=$('#hpPills');
+  if(!wrap||!form) return;
+  cleanupHyperPayWidget();
+  if(blocked) blocked.hidden=true;
+  if(err) err.hidden=true;
+  wrap.hidden=false;
+  wrap.dataset.method=method||'card';
+  const brands=brandsForMethod(method, supportedBrands||(order&&order.supportedBrands));
+  form.setAttribute('data-brands', brands);
+  /* Critical: do not set form.action — shopperResultUrl is set by backend at checkout. */
+  form.removeAttribute('action');
+
+  if(pills){
+    pills.hidden=false;
+    pills.classList.remove('is-redundant');
+    pills.innerHTML=brands.split(/\s+/).filter(Boolean).map(b=>`<span>${esc(b)}</span>`).join('');
+  }
+  if(hint){
+    const appleUi=method==='apple_pay'&&brandsIncludeApplePay(brands);
+    hint.dataset.t=appleUi?'payHintApple':'payHint';
+    hint.textContent=t(hint.dataset.t);
+  }
+  if(ov) ov.classList.add('on');
+
+  const ar=LANG==='ar';
+  /* iframeStyles: only affects iframe-hosted field interiors (card number etc.).
+     Parent CSS still styles iframe chrome (border/radius/height). */
+  window.wpwlOptions={
+    style:'plain',
+    locale:ar?'ar':'en',
+    brandDetection:true,
+    showCVVHint:false,
+    requireCardHolder:true,
+    showOneClickWidget:false,
+    hideOtherPaymentButton:true,
+    paymentTarget:'_top',
+    showLabels:true,
+    showPlaceholders:true,
+    labels: ar?{
+      brand:'', cardNumber:'رقم البطاقة', expiryDate:'تاريخ الانتهاء',
+      cvv:'رمز الأمان', cardHolder:'اسم حامل البطاقة', submit:'ادفع الآن'
+    }:{
+      brand:'', cardNumber:'Card number', expiryDate:'Expiry',
+      cvv:'CVV', cardHolder:'Card holder', submit:'Pay now'
+    },
+    iframeStyles:{
+      'card-number-placeholder':{
+        'color':'#8b9a93','font-size':'16px','font-family':'Cairo,sans-serif','font-weight':'400'
+      },
+      'card-number-input':{
+        'color':'#0e1f1b','font-size':'16px','font-family':'Cairo,sans-serif','font-weight':'500',
+        'line-height':'48px'
+      },
+      'cvv-placeholder':{
+        'color':'#8b9a93','font-size':'16px','font-family':'Cairo,sans-serif'
+      },
+      'cvv-input':{
+        'color':'#0e1f1b','font-size':'16px','font-family':'Cairo,sans-serif','font-weight':'500'
+      }
+    },
+    onReady:function(){
+      enhanceSchoolWidgetDom(wrap, method, brands);
+      observeSchoolWidgetDom(wrap, method, brands);
+      if(ov) ov.classList.remove('on');
+    },
+    onBeforeSubmitCard:function(){
+      wrap.querySelectorAll('input[type="checkbox"]').forEach(prepareSchoolCheckbox);
+      return true;
+    },
+    onError:function(){
+      if(ov) ov.classList.remove('on');
+      showPaymentWidgetError(t('payWidgetErr'));
+    }
+  };
+
+  const s=document.createElement('script');
+  s.src=scriptSrc;
+  s.async=true;
+  s.dataset.schoolHyperpay='1';
+  s.dataset.checkoutId=checkoutId;
+  s.onerror=function(){ if(ov) ov.classList.remove('on'); showPaymentWidgetError(t('payWidgetErr')); };
+  document.body.appendChild(s);
+}
+
+function prepareSchoolCheckbox(node){
+  if(!(node instanceof HTMLInputElement)) return;
+  node.checked=true;
+  node.required=false;
+  node.setAttribute('aria-hidden','true');
+  node.setAttribute('data-hp-hidden','1');
+}
+
+function isSchoolAllowedWpwlGroup(group){
+  if(!(group instanceof HTMLElement)) return false;
+  if(group.querySelector('.wpwl-button-pay, .wpwl-control-cardNumber, input[name="card.number"], input[name="card.expiry"], input[name="card.cvv"], input[name="card.holder"], .wpwl-apple-pay-button, .wpwl-group-APPLEPAY'))
+    return true;
+  return ['brand','cardNumber','expiry','cvv','cardHolder','submit','APPLEPAY'].some(s=>group.classList.contains('wpwl-group-'+s));
+}
+function hideSchoolWpwlNode(node){
+  if(!(node instanceof HTMLElement)) return;
+  node.style.setProperty('display','none','important');
+  node.setAttribute('aria-hidden','true');
+  node.setAttribute('data-hp-hidden','1');
+}
+
+function forceSchoolLtrCardFields(root){
+  const sel=[
+    '.wpwl-group-cardNumber','.wpwl-group-expiry','.wpwl-group-cvv','.wpwl-group-cardHolder',
+    '.wpwl-control-cardNumber','.wpwl-control-expiry','.wpwl-control-cvv','.wpwl-control-cardHolder',
+    'input[name="card.number"]','input[name="card.expiry"]','input[name="card.cvv"]','input[name="card.holder"]',
+    'iframe.wpwl-control'
+  ].join(',');
+  root.querySelectorAll(sel).forEach(node=>{
+    if(!(node instanceof HTMLElement)) return;
+    node.setAttribute('dir','ltr');
+    node.style.direction='ltr';
+    node.style.unicodeBidi='isolate';
+    if(node instanceof HTMLInputElement||node.tagName==='IFRAME') node.style.textAlign='left';
+  });
+}
+
+function enhanceSchoolWidgetDom(root, method, brands){
+  if(!root) return;
+  const appleOn=brandsIncludeApplePay(brands)||method==='apple_pay';
+  const cardFlow=method==='card'||method==='mada'||(method==='apple_pay'&&!brandsIncludeApplePay(brands));
+
+  /* Optional Click to Pay / virtual-account shells (not required card fields). */
+  root.querySelectorAll('.wpwl-container-clickToPay, .wpwl-form-clickToPay, .wpwl-form-virtualAccount').forEach(hideSchoolWpwlNode);
+
+  if(cardFlow){
+    root.querySelectorAll('input[type="checkbox"]').forEach(prepareSchoolCheckbox);
+
+    root.querySelectorAll('.wpwl-form-card .wpwl-group, .wpwl-form-modern .wpwl-group, .wpwl-form .wpwl-group').forEach(group=>{
+      if(isSchoolAllowedWpwlGroup(group)) return;
+      group.querySelectorAll('input[type="checkbox"]').forEach(prepareSchoolCheckbox);
+      hideSchoolWpwlNode(group);
+    });
+
+    /* Hide non-card payment containers, but never Apple Pay when supported. */
+    root.querySelectorAll('.wpwl-container').forEach(container=>{
+      if(!(container instanceof HTMLElement)) return;
+      const isCard=container.classList.contains('wpwl-container-card')||
+        !!container.querySelector('.wpwl-form-card, .wpwl-group-cardNumber');
+      const isApple=!!container.querySelector('.wpwl-group-APPLEPAY, .wpwl-apple-pay-button');
+      if(!isCard&&!(appleOn&&isApple)) hideSchoolWpwlNode(container);
+    });
+  }
+
+  root.querySelectorAll('.wpwl-form').forEach(form=>{
+    form.classList.add('wpwl-form-modern');
+
+    form.querySelectorAll('.wpwl-group-brand .wpwl-label').forEach(n=>{ if(n instanceof HTMLElement) n.style.display='none'; });
+    form.querySelectorAll('.wpwl-group-brand select, .wpwl-group-brand .wpwl-control-brand, .wpwl-group-brand .wpwl-control').forEach(n=>{
+      if(n instanceof HTMLElement) n.style.display='none';
+    });
+    form.querySelectorAll('.wpwl-icon, .wpwl-icon-question').forEach(n=>{ if(n instanceof HTMLElement) n.style.display='none'; });
+
+    const brandIcons=form.querySelectorAll('.wpwl-brand, .wpwl-brand-card');
+    const pills=$('#hpPills');
+    if(pills&&brandIcons.length){ pills.classList.add('is-redundant'); pills.hidden=true; }
+
+    const expiry=form.querySelector('.wpwl-group-expiry');
+    const cvv=form.querySelector('.wpwl-group-cvv');
+    if(expiry&&cvv&&!form.querySelector('.hp-inline-row')){
+      const row=document.createElement('div');
+      row.className='hp-inline-row';
+      if(expiry.parentNode){
+        expiry.parentNode.insertBefore(row, expiry);
+        row.appendChild(expiry);
+        row.appendChild(cvv);
+      }
+    }
+
+    form.querySelectorAll('.wpwl-button-pay').forEach(btn=>{
+      btn.textContent=LANG==='ar'?'ادفع الآن':'Pay now';
+    });
+  });
+
+  forceSchoolLtrCardFields(root);
+}
+
+let SCHOOL_WPWL_OBS=null;
+function observeSchoolWidgetDom(root, method, brands){
+  if(!root||typeof MutationObserver==='undefined') return;
+  if(SCHOOL_WPWL_OBS){ try{ SCHOOL_WPWL_OBS.disconnect(); }catch(e){} SCHOOL_WPWL_OBS=null; }
+  let t=null;
+  SCHOOL_WPWL_OBS=new MutationObserver(()=>{
+    if(t) clearTimeout(t);
+    t=setTimeout(()=>enhanceSchoolWidgetDom(root, method, brands), 80);
+  });
+  SCHOOL_WPWL_OBS.observe(root,{childList:true,subtree:true});
+}
+
+/* ---------- 8. order status (?order=SCH-...) — GET /status; never trust URL for paid ---------- */
+let STATUS=null;
+let STATUS_POLL_TIMER=null;
+let STATUS_POLL_NO=null;
+let STATUS_INFLIGHT=false;
+const STATUS_TERMINAL={paid:1,failed:1,expired:1,cancelled:1};
+
+function stopStatusPoll(){
+  if(STATUS_POLL_TIMER){ clearTimeout(STATUS_POLL_TIMER); STATUS_POLL_TIMER=null; }
+  STATUS_POLL_NO=null;
+  STATUS_INFLIGHT=false;
+}
+function scheduleStatusPoll(no){
+  if(STATUS_POLL_TIMER) clearTimeout(STATUS_POLL_TIMER);
+  STATUS_POLL_TIMER=setTimeout(()=>{ STATUS_POLL_TIMER=null; pollOrderStatus(no); }, 4000);
+}
+async function openStatus(no){
+  stopStatusPoll();
+  STATUS=null;
+  STATUS_POLL_NO=no;
+  go(7);
+  const sec=$('#s7');
+  if(sec) sec.className='screen on st-pending';
+  const h=$('#s7h1'),p=$('#s7sub');
+  if(h){ h.dataset.t='stPendingH'; h.textContent=t('stPendingH'); }
+  if(p){ p.dataset.t='stPendingP'; p.textContent=t('stPendingP'); }
+  const circ=$('#s7 .circ'); if(circ) circ.innerHTML=`<i data-lucide="clock" width="30" stroke-width="3"></i>`;
+  icons();
+  $('#ordno').textContent=no;
+  $('#sum7').innerHTML=`<div class="full">${t('loading')}</div>`;
+  $('#s7act').innerHTML='';
+  await pollOrderStatus(no);
+}
+async function pollOrderStatus(no){
+  if(STATUS_POLL_NO!==no) return;
+  if(STATUS_INFLIGHT) return;
+  const onStatusScreen=$('#s7')&&$('#s7').classList.contains('on');
+  if(!onStatusScreen){ stopStatusPoll(); return; }
+
+  STATUS_INFLIGHT=true;
+  try{
+    STATUS=await fetchOrderStatus(no);
+    /* Paid only from status API — never from ?pay= or other URL flags. */
+    renderStatus();
+    if(STATUS_POLL_NO!==no) return;
+    if(STATUS.status==='pending') scheduleStatusPoll(no);
+    else stopStatusPoll();
+  }catch(e){
+    if(STATUS_POLL_NO!==no) return;
+    stopStatusPoll();
+    STATUS=null;
+    const missing=e.code==='ORDER_NOT_FOUND';
+    const sec=$('#s7');
+    if(sec) sec.className='screen on st-failed';
+    const h=$('#s7h1'),p=$('#s7sub');
+    if(h){ h.dataset.t=missing?'notFound':'stFailedH'; h.textContent=t(missing?'notFound':'stFailedH'); }
+    if(p){ p.dataset.t=missing?'nfSub':'stFailedP'; p.textContent=missing?t('notFound'):t('stFailedP'); }
+    const circ=$('#s7 .circ'); if(circ) circ.innerHTML=`<i data-lucide="x" width="30" stroke-width="3"></i>`;
+    icons();
+    $('#sum7').innerHTML=`<div class="full">${esc(missing?t('notFound'):(e.msg||t('errNet')))}</div>`;
+    $('#s7act').innerHTML=`<div style="padding:0 var(--s4)"><a class="btn btn-outline btn-block retry" href="${schoolHome()}">${t('startOver')}</a></div>`;
+    toast(e.msg||t('errNet'),'bad');
+  }finally{
+    STATUS_INFLIGHT=false;
+  }
+}
+function renderStatus(){
+  const s=STATUS; if(!s)return;
+  const V={paid:['s7h1','s7sub','check'],pending:['stPendingH','stPendingP','clock'],failed:['stFailedH','stFailedP','x'],
+           expired:['stExpiredH','stExpiredP','timer-off'],cancelled:['stCancelledH','stCancelledP','circle-slash']}[s.status]
+        ||['stPendingH','stPendingP','clock'];
+  const sec=$('#s7'); sec.className='screen on st-'+s.status;
+  const h=$('#s7h1'),p=$('#s7sub');
+  h.dataset.t=V[0]; h.textContent=t(V[0]); p.dataset.t=V[1]; p.textContent=t(V[1]);
+  $('#s7 .circ').innerHTML=`<i data-lucide="${V[2]}" width="30" stroke-width="3"></i>`;
+  $('#ordno').textContent=s.order_no;
+  const f=s.first_delivery_date?fmtDay(s.first_delivery_date):null;
+  const cur=displayCurrency(s.currency);
+  $('#sum7').innerHTML=
+    `<div class="st"><b>${esc(s.meals)}</b><span>${t('meal')}</span></div>
+     <div class="st"><b>${esc(s.days)}</b><span>${t('day')}</span></div>
+     <div class="st"><b>${esc(s.total)}</b><span>${esc(cur)}</span></div>
+     ${f?`<div class="full">${t('firstDel')}: ${f.dn} · ${f.dd}</div>`:''}
+     ${(s.school_name_ar||s.school_id)?`<div class="full schbr">${schoolBranchHTML(s.school_name_ar||s.school_id,s.school_name_en||s.school_id,s.branch_name_ar,s.branch_name_en)}</div>`:''}`;
+  $('#s7act').innerHTML=(s.status==='failed'||s.status==='expired')
+    ?`<div style="padding:0 var(--s4)">
+        <button type="button" class="btn btn-primary btn-block" onclick="go(6);updatePayButton()">${esc(t('payRetry'))}</button>
+        <a class="btn btn-outline btn-block retry" style="margin-top:8px" href="${schoolHome()}">${t('startOver')}</a>
+      </div>`
+    :(s.status==='pending'
+      ?`<div style="padding:0 var(--s4)"><button type="button" class="btn btn-primary btn-block" onclick='resumePendingPayment(${JSON.stringify(s.order_no)})'>${esc(t('payRetry'))}</button></div>`
+      :'');
+  icons();
+}
+function resumePendingPayment(orderNo){
+  const cached=readSchOrder();
+  if(cached&&cached.order_no===orderNo&&hasPaymentSession(cached)){
+    PAY_ACTIVE=cached;
+    PAY_METHOD=cached.payment_method||PAY_METHOD||'card';
+    if(PAY_METHOD) selectPayMethod(PAY_METHOD);
+    startPayment(cached);
+    return;
+  }
+  /* No cached session: return to pay screen; user must submit again (may get same checkoutId — clarify with backend if session is dead). */
+  go(6);
+  updatePayButton();
+  toast(t('payReturnFailed'),'bad');
+}
+
+/* ---------- 0. school picker ---------- */
+let PICK=null, PICK_MODE=null;          /* PICK = [{id,name_ar,name_en,logo_url}], PICK_MODE = 'pick' | 'notfound' */
+async function showPicker(mode){
+  PICK_MODE=mode||'pick';
+  go(0); document.title=t('title');
+  renderPicker();
+  if(!PICK){
+    try{ const r=await api('school-menu?list=1&lang='+LANG+MENU_REGION); PICK=r.schools||[]; }
+    catch(e){ PICK=null; $('#pkList').innerHTML=`<div class="pk-empty">${esc(e.msg||t('errNet'))}</div>`; return; }
+    renderPicker();
+  }
+}
+function renderPicker(){
+  if(!PICK_MODE)return;
+  const nf=PICK_MODE==='notfound';
+  $('#pkTitle').dataset.t=nf?'nfTitle':'pickTitle'; $('#pkTitle').textContent=t(nf?'nfTitle':'pickTitle');
+  $('#pkSub').dataset.t=nf?'nfSub':'pickSub';     $('#pkSub').textContent=t(nf?'nfSub':'pickSub');
+  if(!PICK){ $('#pkList').innerHTML=`<div class="pk-empty">${t('loading')}</div>`; return; }
+  const chev=LANG==='ar'?'chevron-left':'chevron-right';
+  $('#pkList').innerHTML=(nf?`<a class="btn btn-primary btn-block pk-go" href="/">${t('pickLink')}</a>`:'')+
+    (PICK.length?PICK.map(sc=>{
+      const first=LANG==='ar'?sc.name_ar:sc.name_en, second=LANG==='ar'?sc.name_en:sc.name_ar;
+      return `<a class="pk-card" href="/${encodeURIComponent(sc.id)}">
+        <span class="pk-logo"><img src="${esc(sc.logo_url||'assets/logos/leaf-e-primary-green.png')}" alt=""></span>
+        <span class="pk-nm"><b>${esc(first)}</b><span>${esc(second)}</span></span>
+        <i data-lucide="${chev}" width="20"></i></a>`;}).join('')
+    :`<div class="pk-empty">${t('pickNone')}</div>`);
+  icons();
+}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+/* ---------- boot ---------- */
+if(!kids.length)addKid();
+applyLang();
+(function boot(){
+  const no=(QS.get('order')||'').trim().toUpperCase();
+  const payFlag=(QS.get('pay')||'').trim().toLowerCase();
+  if(no){ try{ sessionStorage.removeItem('sch_order'); }catch(e){} openStatus(no); if(payFlag==='failed') toast(t('payReturnFailed'),'bad'); }
+  if(!SCHOOL){ if(!no) showPicker('pick'); return; }          /* no default school: let the parent choose */
+  lsDel('gs_parent_pending_'+SCHOOL);                         /* leftover from the old paid-only save (2026-10-01) */
+  if(!no) applySavedParent(loadSavedParent());                 /* returning parent (not on ?order= status visits) */
+  BRAND_CACHED=readBrand();
+  if(BRAND_CACHED) applyBranding(BRAND_CACHED);               /* last visit's logo, hero and texts, then the API overwrites */
+  else setLogo(LOGO_GUESS(SCHOOL));                           /* first visit: the logo's fixed path */
+  let cached=null; try{ cached=localStorage.getItem('hero:'+SCHOOL); }catch(e){}
+  if(cached) setHero(cached); else if(!BRAND_CACHED) setHero(HERO_GUESS(SCHOOL),true);
+  ensureMenu().catch(e=>{
+    setHero(null);
+    if(no) return;
+    if(e.code==='SCHOOL_NOT_FOUND'){ try{ localStorage.removeItem('gs_school_'+SCHOOL); }catch(x){} setLogo(null); toast(e.msg,'bad'); showPicker('notfound'); }
+    else toast(t('errMenu'),'bad');
+  });
+})();
+</script>
+</body></html>

@@ -1,0 +1,433 @@
+/* School order — payment methods + HyperPay widget chrome.
+   Cause of rejected redesign: `.wpwl-group{display:flex!important}` undid optional-field
+   hides (same specificity, later rule), and broad `input.wpwl-control` styled checkboxes
+   like text fields. Text styles are scoped to card fields only. */
+
+/* ---------- Method picker (review screen) ---------- */
+.checkout-payment-card{
+  background:var(--bg-white);
+  border-radius:var(--r-lg);
+  padding:14px;
+  box-shadow:var(--sh-sm);
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin:14px 0 8px;
+  border:1px solid rgba(0,78,66,.05);
+}
+.checkout-section-label{
+  font:700 13px Cairo;
+  color:var(--ink-500);
+  margin-bottom:2px;
+}
+.pay-method{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 14px;
+  border:1.5px solid #E8EFE9;
+  border-radius:var(--r-md);
+  cursor:pointer;
+  transition:border-color .2s,background .2s,box-shadow .2s;
+  background:var(--bg-white);
+  -webkit-tap-highlight-color:transparent;
+}
+.pay-method:active{transform:scale(.99)}
+.pay-method.selected{
+  border-color:var(--green-primary);
+  background:rgba(36,178,93,.05);
+  box-shadow:0 2px 12px -4px rgba(36,178,93,.28);
+}
+.pay-radio{
+  width:18px;height:18px;
+  border:2px solid #C8CEC4;
+  border-radius:50%;
+  flex-shrink:0;
+  position:relative;
+}
+.pay-method.selected .pay-radio{border-color:var(--green-primary)}
+.pay-method.selected .pay-radio::after{
+  content:'';
+  position:absolute;inset:3px;
+  border-radius:50%;
+  background:var(--green-primary);
+}
+.pay-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.pay-name{font:800 15px Cairo;color:var(--green-dark)}
+.pay-sub{font:600 12.5px Cairo;color:var(--ink-400)}
+.pay-logo{flex-shrink:0;display:flex;align-items:center;gap:4px}
+.pay-logo-apple{color:#000}
+.pay-logo-mada{
+  display:inline-flex;align-items:center;gap:4px;
+  background:#fff;border:1px solid #E0E0E0;
+  padding:5px 8px;border-radius:6px;
+}
+.mada-dots{display:inline-flex;gap:2px}
+.mada-dots span{width:7px;height:7px;border-radius:1.5px;display:inline-block}
+.mada-dots .d1{background:#84BA40}
+.mada-dots .d2{background:#00ABA8}
+.mada-dots .d3{background:#1A86C7}
+.mada-text{font:900 13px Cairo;color:#1F1F1F}
+.checkout-trust{
+  text-align:center;font:600 13px Cairo;color:var(--ink-400);
+  margin:8px 0 0;display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.checkout-trust svg{color:var(--green-primary);width:14px;height:14px}
+#paybtn.cta-black{
+  background:linear-gradient(135deg,#1F2521 0%,#000 100%);
+  box-shadow:0 8px 20px -6px rgba(0,0,0,.45);
+}
+#paybtn:disabled{
+  opacity:.55;
+  cursor:wait;
+}
+
+/* ---------- Payment screen (s8) ---------- */
+#s8{
+  background:
+    radial-gradient(ellipse at top right, rgba(36,178,93,.06), transparent 55%),
+    var(--bg-bone);
+}
+#s8 .hp-summary{
+  background:var(--bg-white);
+  border-radius:var(--r-lg);
+  padding:14px 16px;
+  margin:0 0 14px;
+  box-shadow:var(--sh-sm);
+  border:1px solid rgba(0,78,66,.05);
+}
+#s8 .hp-summary .row{
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  font:600 13px Cairo;color:var(--ink-500);padding:6px 0;
+}
+#s8 .hp-summary .row + .row{
+  border-top:1px dashed rgba(0,78,66,.08);
+  margin-top:2px;padding-top:10px;
+}
+#s8 .hp-summary .row b{
+  font:800 15px Cairo;color:var(--green-dark);direction:ltr;unicode-bidi:isolate;
+  font-variant-numeric:tabular-nums;
+}
+#s8 .hp-summary .row.total b{
+  font-size:17px;color:var(--green-primary);
+}
+
+.hyperpay-widget-root{
+  --hp-green:#24b25d;
+  --hp-green-dark:#004e42;
+  --hp-ink:#0e1f1b;
+  --hp-ink-mute:#8b9a93;
+  --hp-line:#e8efe9;
+  --hp-radius:14px;
+  --hp-field-h:48px;
+  position:relative;
+  min-height:180px;
+  overflow-x:hidden;
+}
+.hp-form-card{
+  position:relative;
+  padding:16px 14px 14px;
+  border-radius:20px;
+  border:1px solid var(--hp-line);
+  background:var(--bg-white);
+  box-shadow:var(--sh-md);
+}
+.hp-gateway-header{margin-bottom:10px}
+.hp-brand-pills{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.hp-brand-pills[hidden],
+.hp-brand-pills.is-redundant{display:none!important}
+.hp-brand-pills span{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:48px;height:26px;padding:0 9px;border-radius:8px;
+  border:1px solid var(--hp-line);background:#fafcf9;
+  font:800 10px Cairo;color:#4a5c56;letter-spacing:.04em;
+}
+.hp-gateway-hint{margin:0;font:400 13px/1.45 Cairo;color:var(--hp-ink-mute)}
+.hp-secure-note{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin:12px 0 0;font:400 12px Cairo;color:var(--hp-ink-mute);
+}
+.hp-secure-note svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+.hp-overlay{
+  position:absolute;inset:0;z-index:5;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;
+  background:rgba(250,248,238,.92);
+  border-radius:20px;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.hp-overlay.on{opacity:1;pointer-events:auto}
+.hp-spinner{
+  width:28px;height:28px;border-radius:50%;
+  border:3px solid #e8efe9;border-top-color:var(--green-primary);
+  animation:hp-spin .8s linear infinite;
+}
+@keyframes hp-spin{to{transform:rotate(360deg)}}
+.hp-error,.hp-blocked{
+  padding:16px;border-radius:var(--r-lg);background:#FFF5F0;
+  color:var(--orange);font:600 14px/1.5 Cairo;text-align:center;
+}
+.hp-blocked{background:var(--bg-white);color:var(--green-dark);box-shadow:var(--sh-sm)}
+.hp-blocked .pn{font:400 13px Cairo;color:var(--ink-500)}
+.hp-blocked .pn b{font:700 16px Cairo;color:var(--green-dark);display:block;margin-top:2px;direction:ltr}
+.hp-blocked .go{font:700 15px Cairo;color:var(--orange);margin:12px 0}
+.hp-blocked .tt{font:400 12px/1.6 Cairo;color:var(--ink-500);margin-top:10px}
+.hp-mock-banner{
+  margin:0 0 12px;padding:10px 12px;border-radius:var(--r-md);
+  background:#FFF8E6;color:#7A5C00;font:700 12px/1.45 Cairo;text-align:center;
+  border:1px solid #F0DFA0;
+}
+#hpWidgetWrap[hidden],#hpBlocked[hidden],#hpError[hidden],#hpMockBanner[hidden]{display:none!important}
+
+/* Optional HyperPay nodes (real class names from eu widget DOM). Never blanket-hide Apple Pay. */
+.hyperpay-widget-root .wpwl-container-clickToPay,
+.hyperpay-widget-root .wpwl-form-clickToPay,
+.hyperpay-widget-root .wpwl-form-virtualAccount,
+.hyperpay-widget-root .wpwl-group-installment,
+.hyperpay-widget-root .wpwl-group-installments,
+.hyperpay-widget-root .wpwl-group-mobilePhoneCountryCode,
+.hyperpay-widget-root .wpwl-group-mobilePhoneNumber,
+.hyperpay-widget-root .wpwl-group-birthDate,
+.hyperpay-widget-root .wpwl-group-clickToPayConfirmation,
+.hyperpay-widget-root .wpwl-group-visaInstallmentConfirmation,
+.hyperpay-widget-root .wpwl-wrapper-spinner,
+.hyperpay-widget-root .wpwl-spinner,
+.hyperpay-widget-root [data-hp-hidden="1"]{display:none!important}
+
+/*
+  Card/mada: allowlist visible groups only (brand icons + card fields + pay).
+  Higher specificity than layout rules below so optional groups stay hidden.
+*/
+.hyperpay-widget-root[data-method="card"] .wpwl-form-card > .wpwl-group:not(.wpwl-group-brand):not(.wpwl-group-cardNumber):not(.wpwl-group-expiry):not(.wpwl-group-cvv):not(.wpwl-group-cardHolder):not(.wpwl-group-submit),
+.hyperpay-widget-root[data-method="mada"] .wpwl-form-card > .wpwl-group:not(.wpwl-group-brand):not(.wpwl-group-cardNumber):not(.wpwl-group-expiry):not(.wpwl-group-cvv):not(.wpwl-group-cardHolder):not(.wpwl-group-submit),
+.hyperpay-widget-root[data-method="card"] .wpwl-form-modern > .wpwl-group:not(.wpwl-group-brand):not(.wpwl-group-cardNumber):not(.wpwl-group-expiry):not(.wpwl-group-cvv):not(.wpwl-group-cardHolder):not(.wpwl-group-submit),
+.hyperpay-widget-root[data-method="mada"] .wpwl-form-modern > .wpwl-group:not(.wpwl-group-brand):not(.wpwl-group-cardNumber):not(.wpwl-group-expiry):not(.wpwl-group-cvv):not(.wpwl-group-cardHolder):not(.wpwl-group-submit){
+  display:none!important;
+}
+
+/* Layout reset — do NOT force display on every .wpwl-group (that re-showed optional fields). */
+.hyperpay-widget-root .wpwl-form,
+.hyperpay-widget-root .wpwl-form-modern,
+.hyperpay-widget-root .wpwl-wrapper,
+.hyperpay-widget-root .wpwl-container-card,
+.hyperpay-widget-root .wpwl-sup-wrapper{
+  margin:0!important;padding:0!important;
+  background:transparent!important;border:0!important;box-shadow:none!important;
+  max-width:100%!important;float:none!important;width:100%!important;
+  box-sizing:border-box!important;
+}
+.hyperpay-widget-root[data-method="card"] .wpwl-form-card,
+.hyperpay-widget-root[data-method="mada"] .wpwl-form-card,
+.hyperpay-widget-root[data-method="card"] .wpwl-form-modern,
+.hyperpay-widget-root[data-method="mada"] .wpwl-form-modern{
+  display:flex!important;flex-direction:column!important;gap:10px!important;
+}
+
+/* Only style allowed card groups as stacked fields */
+.hyperpay-widget-root[data-method="card"] .wpwl-group-cardNumber,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-cardNumber,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-expiry,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-expiry,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-cvv,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-cvv,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-cardHolder,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-cardHolder,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-submit,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-submit{
+  display:flex!important;flex-direction:column!important;align-items:stretch!important;
+  gap:5px!important;margin:0!important;padding:0!important;
+  width:100%!important;float:none!important;clear:both!important;
+  box-sizing:border-box!important;
+}
+
+.hyperpay-widget-root[data-method="card"] .wpwl-group-brand,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-brand{
+  display:flex!important;flex-direction:row!important;justify-content:flex-start!important;
+  align-items:center!important;gap:8px!important;min-height:0!important;
+  margin:0 0 2px!important;padding:0!important;width:100%!important;float:none!important;
+}
+.hyperpay-widget-root .wpwl-group-brand .wpwl-label,
+.hyperpay-widget-root .wpwl-group-brand select,
+.hyperpay-widget-root .wpwl-group-brand .wpwl-control,
+.hyperpay-widget-root .wpwl-group-brand .wpwl-wrapper{
+  display:none!important;
+}
+.hyperpay-widget-root .wpwl-brand,
+.hyperpay-widget-root .wpwl-brand-card{
+  margin:0!important;border-radius:8px!important;box-shadow:none!important;
+  opacity:.55;transform:scale(.95);
+  transition:opacity .2s ease,transform .2s ease;
+}
+.hyperpay-widget-root .wpwl-brand-selected,
+.hyperpay-widget-root .wpwl-brand-active{
+  opacity:1!important;transform:scale(1)!important;
+}
+
+/* Labels — Arabic RTL alignment via text-align:start */
+.hyperpay-widget-root[data-method="card"] .wpwl-group-cardNumber .wpwl-label,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-cardNumber .wpwl-label,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-expiry .wpwl-label,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-expiry .wpwl-label,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-cvv .wpwl-label,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-cvv .wpwl-label,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-cardHolder .wpwl-label,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-cardHolder .wpwl-label{
+  display:block!important;float:none!important;width:100%!important;
+  margin:0!important;padding:0!important;
+  font-family:Cairo,sans-serif!important;
+  font-size:13px!important;font-weight:700!important;
+  color:var(--hp-ink)!important;line-height:1.35!important;
+  text-align:start!important;
+  white-space:normal!important;
+}
+
+/*
+  Text-field chrome ONLY on card inputs / iframes — never all .wpwl-control
+  (checkboxes, hidden, country, mobile looked like empty square inputs).
+*/
+.hyperpay-widget-root[data-method="card"] .wpwl-control-cardNumber,
+.hyperpay-widget-root[data-method="mada"] .wpwl-control-cardNumber,
+.hyperpay-widget-root[data-method="card"] .wpwl-control-expiry,
+.hyperpay-widget-root[data-method="mada"] .wpwl-control-expiry,
+.hyperpay-widget-root[data-method="card"] .wpwl-control-cvv,
+.hyperpay-widget-root[data-method="mada"] .wpwl-control-cvv,
+.hyperpay-widget-root[data-method="card"] .wpwl-control-cardHolder,
+.hyperpay-widget-root[data-method="mada"] .wpwl-control-cardHolder,
+.hyperpay-widget-root[data-method="card"] input[name="card.number"],
+.hyperpay-widget-root[data-method="mada"] input[name="card.number"],
+.hyperpay-widget-root[data-method="card"] input[name="card.expiry"],
+.hyperpay-widget-root[data-method="mada"] input[name="card.expiry"],
+.hyperpay-widget-root[data-method="card"] input[name="card.cvv"],
+.hyperpay-widget-root[data-method="mada"] input[name="card.cvv"],
+.hyperpay-widget-root[data-method="card"] input[name="card.holder"],
+.hyperpay-widget-root[data-method="mada"] input[name="card.holder"],
+.hyperpay-widget-root[data-method="card"] .wpwl-group-cardNumber iframe.wpwl-control,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-cardNumber iframe.wpwl-control,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-cvv iframe.wpwl-control,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-cvv iframe.wpwl-control,
+.hyperpay-widget-root[data-method="card"] .wpwl-group-expiry iframe.wpwl-control,
+.hyperpay-widget-root[data-method="mada"] .wpwl-group-expiry iframe.wpwl-control{
+  display:block!important;float:none!important;
+  width:100%!important;max-width:100%!important;
+  height:var(--hp-field-h)!important;min-height:var(--hp-field-h)!important;
+  margin:0!important;padding:0 14px!important;
+  border:1.5px solid var(--hp-line)!important;
+  border-radius:var(--hp-radius)!important;
+  background:#fff!important;box-shadow:none!important;
+  font-family:Cairo,sans-serif!important;
+  font-size:16px!important;font-weight:500!important;
+  color:var(--hp-ink)!important;
+  box-sizing:border-box!important;
+  -webkit-appearance:none;appearance:none;
+  transition:border-color .2s ease,box-shadow .2s ease!important;
+  direction:ltr!important;unicode-bidi:isolate!important;text-align:left!important;
+}
+.hyperpay-widget-root[data-method="card"] iframe.wpwl-control,
+.hyperpay-widget-root[data-method="mada"] iframe.wpwl-control{
+  padding:0!important;
+}
+
+/* Never give text-field chrome to checkboxes / hidden / non-card controls */
+.hyperpay-widget-root input[type="checkbox"],
+.hyperpay-widget-root input[type="hidden"],
+.hyperpay-widget-root .wpwl-checkbox,
+.hyperpay-widget-root .wpwl-checkbox-input{
+  width:auto!important;height:auto!important;min-height:0!important;
+  padding:0!important;border:0!important;border-radius:0!important;
+  box-shadow:none!important;background:transparent!important;
+}
+
+.hyperpay-widget-root[data-method="card"] .wpwl-control-cardNumber:focus,
+.hyperpay-widget-root[data-method="mada"] .wpwl-control-cardNumber:focus,
+.hyperpay-widget-root[data-method="card"] .wpwl-control-expiry:focus,
+.hyperpay-widget-root[data-method="mada"] .wpwl-control-expiry:focus,
+.hyperpay-widget-root[data-method="card"] .wpwl-control-cvv:focus,
+.hyperpay-widget-root[data-method="mada"] .wpwl-control-cvv:focus,
+.hyperpay-widget-root[data-method="card"] .wpwl-control-cardHolder:focus,
+.hyperpay-widget-root[data-method="mada"] .wpwl-control-cardHolder:focus,
+.hyperpay-widget-root[data-method="card"] input[name="card.number"]:focus,
+.hyperpay-widget-root[data-method="mada"] input[name="card.number"]:focus,
+.hyperpay-widget-root[data-method="card"] input[name="card.expiry"]:focus,
+.hyperpay-widget-root[data-method="mada"] input[name="card.expiry"]:focus,
+.hyperpay-widget-root[data-method="card"] input[name="card.cvv"]:focus,
+.hyperpay-widget-root[data-method="mada"] input[name="card.cvv"]:focus,
+.hyperpay-widget-root[data-method="card"] input[name="card.holder"]:focus,
+.hyperpay-widget-root[data-method="mada"] input[name="card.holder"]:focus{
+  outline:none!important;
+  border-color:var(--hp-green)!important;
+  box-shadow:0 0 0 4px rgba(36,178,93,.12)!important;
+}
+
+.hyperpay-widget-root .hp-inline-row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  width:100%;
+}
+.hyperpay-widget-root .hp-inline-row .wpwl-group{margin:0!important}
+
+.hyperpay-widget-root .wpwl-icon,
+.hyperpay-widget-root .wpwl-icon-question,
+.hyperpay-widget-root .wpwl-hint-cvv{display:none!important}
+
+.hyperpay-widget-root .wpwl-hint,
+.hyperpay-widget-root .wpwl-text{
+  margin:2px 0 0!important;
+  font:400 12px/1.4 Cairo!important;
+  color:var(--hp-ink-mute)!important;
+  text-align:start!important;
+}
+
+.hyperpay-widget-root .wpwl-button-pay,
+.hyperpay-widget-root button.wpwl-button-pay{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:100%!important;height:52px!important;min-height:52px!important;
+  margin:6px 0 0!important;padding:0 18px!important;
+  border:none!important;border-radius:var(--hp-radius)!important;
+  background:linear-gradient(135deg,#24b25d 0%,#1fa052 100%)!important;
+  box-shadow:0 8px 20px -6px rgba(36,178,93,.5),inset 0 1px 0 rgba(255,255,255,.2)!important;
+  color:#fff!important;
+  font-family:Cairo,sans-serif!important;
+  font-size:17px!important;font-weight:800!important;
+  cursor:pointer;
+}
+.hyperpay-widget-root .wpwl-button-pay[disabled],
+.hyperpay-widget-root .wpwl-button-pay.wpwl-button-disabled,
+.hyperpay-widget-root .wpwl-form.wpwl-loading .wpwl-button-pay{
+  opacity:.55!important;cursor:wait!important;
+}
+
+/* Apple Pay preserved — no :not(.wpwl-container-card) blanket */
+.hyperpay-widget-root .wpwl-apple-pay-button,
+.hyperpay-widget-root .wpwl-group-APPLEPAY .wpwl-button{
+  background:#000!important;
+  box-shadow:0 8px 20px -8px rgba(0,0,0,.45)!important;
+}
+.hyperpay-widget-root[data-method="apple_pay"] .wpwl-group-APPLEPAY,
+.hyperpay-widget-root[data-method="apple_pay"] .wpwl-apple-pay-button,
+.hyperpay-widget-root[data-method="apple_pay"] .wpwl-container-card{
+  display:block!important;
+}
+
+.hyperpay-widget-root .wpwl-has-error .wpwl-control-cardNumber,
+.hyperpay-widget-root .wpwl-has-error .wpwl-control-expiry,
+.hyperpay-widget-root .wpwl-has-error .wpwl-control-cvv,
+.hyperpay-widget-root .wpwl-has-error .wpwl-control-cardHolder,
+.hyperpay-widget-root .wpwl-has-error iframe.wpwl-control{
+  border-color:#c83a3a!important;
+  box-shadow:0 0 0 4px rgba(200,58,58,.1)!important;
+}
+.hyperpay-widget-root .wpwl-hint-error,
+.hyperpay-widget-root .wpwl-message-error{
+  color:#c83a3a!important;
+  font:600 12px/1.4 Cairo!important;
+  display:block!important;
+  margin-top:4px!important;
+}
+
+@media (max-width:380px){
+  .hyperpay-widget-root .hp-inline-row{grid-template-columns:1fr}
+  .hp-form-card{padding:14px 12px}
+}
+@media (min-width:480px){
+  .hyperpay-widget-root .hp-inline-row{grid-template-columns:1fr 1fr}
+}
