@@ -681,6 +681,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
     <div id="cart"></div>
     <div class="checkout-payment-card" id="payMethods" role="radiogroup" aria-label="payment method">
       <div class="checkout-section-label" data-t="payMethod">طريقة الدفع</div>
+      <!--
       <div class="pay-method" data-method="apple_pay" role="radio" tabindex="0" onclick="selectPayMethod('apple_pay')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPayMethod('apple_pay')}">
         <div class="pay-radio" aria-hidden="true"></div>
         <div class="pay-info">
@@ -702,6 +703,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
           <span class="mada-text">mada</span>
         </div>
       </div>
+      -->
       <div class="pay-method" data-method="card" role="radio" tabindex="0" onclick="selectPayMethod('card')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPayMethod('card')}">
         <div class="pay-radio" aria-hidden="true"></div>
         <div class="pay-info">
@@ -725,7 +727,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         <span data-t="payTrust">الدفع آمن — جميع البيانات مشفرة</span>
       </p>
-      <p class="cap" style="text-align:center;margin-top:8px" data-t="payVia">الدفع عبر HyperPay · مدى · آبل باي · فيزا</p>
+      <p class="cap" style="text-align:center;margin-top:8px" data-t="payVia">الدفع عبر HyperPay · بطاقة ائتمان أو خصم</p>
       <div id="payph"></div>
     </div>
   </section>
@@ -860,7 +862,7 @@ const T={
      juiceLbl:'العصير',juiceName:'عصير المراعي صغير',juiceSub:'مجاناً مع كل طبق رئيسي — اختياري',juiceNone:'لا أرغب في العصير',juiceAsk:'اختر العصير',mealIncl:'الوجبة تشمل: طبق رئيسي + بطاطس + عصير',
      kcal:'سعرة',pro:'بروتين',carb:'كارب',fat:'دهون',g:'غ',clearDay:'مسح اختيارات اليوم',nutri:'القيم الغذائية للوجبة',allerg:'مسببات الحساسية',none:'لا يوجد',
      addToOrder:'أضف للطلب',total:'الإجمالي',totalVat:'الإجمالي شامل الضريبة',cur:'ر.س',review:'مراجعة الطلب',s6sub:'تأكد من كل شي قبل الدفع.',
-     s6note:'بعد الدفع ما يمكن تعديل الطلب أو إلغاؤه من الرابط. لو احتجت تغيير كلّمنا واتساب.',payNow:'ادفع الآن',payVia:'الدفع عبر HyperPay · مدى · آبل باي · فيزا',
+     s6note:'بعد الدفع ما يمكن تعديل الطلب أو إلغاؤه من الرابط. لو احتجت تغيير كلّمنا واتساب.',payNow:'ادفع الآن',payVia:'الدفع عبر HyperPay · بطاقة ائتمان أو خصم',
      payMethod:'طريقة الدفع',paySelect:'اختر طريقة الدفع',payAppleSub:'دفع آمن وسريع عبر جهازك',payMada:'مدى',payMadaSub:'بطاقة الصراف الآلي السعودية',payCard:'بطاقة ائتمان أو خصم',
      payTrust:'الدفع آمن — جميع البيانات مشفرة',payTitle:'إتمام الدفع',payTitleSub:'أكمل الدفع بشكل آمن عبر HyperPay',
      payHint:'ادخل بيانات بطاقتك لإتمام الدفع',payHintApple:'استخدم Apple Pay لإتمام الدفع',payLoading:'جارٍ تحميل نموذج الدفع…',paySecure:'الدفع مشفر وآمن',
@@ -889,7 +891,7 @@ const T={
      juiceLbl:'Juice',juiceName:'Almarai juice (small)',juiceSub:'Free with every main — optional',juiceNone:'No juice, thanks',juiceAsk:'Choose the juice',mealIncl:'Each meal: main dish + potatoes + juice',
      kcal:'kcal',pro:'protein',carb:'carbs',fat:'fat',g:'g',clearDay:'Clear this day',nutri:'Nutrition per meal',allerg:'Allergens',none:'None',
      addToOrder:'Add to order',total:'Total',totalVat:'Total incl. VAT',cur:'SAR',review:'Review order',s6sub:'Check everything before paying.',
-     s6note:'Orders can\'t be edited or cancelled from this link after payment. Need a change? Message us on WhatsApp.',payNow:'Pay now',payVia:'Paid via HyperPay · mada · Apple Pay · Visa',
+     s6note:'Orders can\'t be edited or cancelled from this link after payment. Need a change? Message us on WhatsApp.',payNow:'Pay now',payVia:'Paid via HyperPay · credit or debit card',
      payMethod:'Payment method',paySelect:'Choose a payment method',payAppleSub:'Fast and secure on your device',payMada:'mada',payMadaSub:'Saudi debit card',payCard:'Credit or debit card',
      payTrust:'Secure payment — all data is encrypted',payTitle:'Complete payment',payTitleSub:'Pay securely with HyperPay',
      payHint:'Enter your card details to pay',payHintApple:'Use Apple Pay to complete payment',payLoading:'Loading payment form…',paySecure:'Encrypted secure payment',
@@ -1607,14 +1609,13 @@ function returnUrl(orderNo){
   return schoolHome()+(PATH_SLUG?'?':'&')+'order='+encodeURIComponent(orderNo);
 }
 function resetPay(){
-  PAY_METHOD=null;
   PAY_IN_FLIGHT=false;
   document.querySelectorAll('#payMethods .pay-method').forEach(el=>{
     el.classList.remove('selected'); el.setAttribute('aria-checked','false');
   });
   const b=$('#paybtn'); if(b){b.style.display='';}
   const ph=$('#payph'); if(ph) ph.innerHTML='';
-  updatePayButton();
+  selectPayMethod('card');
 }
 function backFromPayment(){
   cleanupHyperPayWidget();
