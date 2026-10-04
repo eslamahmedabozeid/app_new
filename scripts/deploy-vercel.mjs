@@ -86,6 +86,7 @@ function stage() {
 
   for (const rel of [
     "api/school-menu.js",
+    "api/school-checkout.js",
     "api/school-orders/checkout.js",
     "api/school-orders/status.js",
   ]) {

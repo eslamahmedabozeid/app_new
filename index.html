@@ -1611,6 +1611,49 @@ function buildPayload(){
 function returnUrl(orderNo){
   return schoolHome()+(PATH_SLUG?'?':'&')+'order='+encodeURIComponent(orderNo);
 }
+/* Cart kept on this phone until the bank status is paid, then posted once to Supabase school-checkout. */
+function checkoutSnapshot(body){
+  const snap={...body};
+  delete snap.payment_method;
+  delete snap.total; delete snap.vat; delete snap.amount; delete snap.currency;
+  return snap;
+}
+function rememberPaidSync(orderNo, payload){
+  if(!orderNo||!payload||!payload.lines||!payload.lines.length) return;
+  const raw=JSON.stringify({order_no:orderNo, payload, at:Date.now()});
+  try{ sessionStorage.setItem('gs_paid_sync', raw); }catch(e){}
+  try{ localStorage.setItem('gs_paid_sync_'+orderNo, raw); }catch(e){}
+}
+function readPaidSync(orderNo){
+  let rec=null;
+  try{ rec=JSON.parse(sessionStorage.getItem('gs_paid_sync')||'null'); }catch(e){}
+  if(!rec||rec.order_no!==orderNo){
+    try{ rec=JSON.parse(localStorage.getItem('gs_paid_sync_'+orderNo)||'null'); }catch(e){ rec=null; }
+  }
+  if(!rec||rec.order_no!==orderNo||!rec.payload||!(Date.now()-(rec.at||0)<7*864e5)) return null;
+  return rec;
+}
+let SUPABASE_SYNC_SENT={};
+async function syncPaidOrderToSupabase(status){
+  if(!status||status.status!=='paid'||!status.order_no) return;
+  const no=status.order_no;
+  if(SUPABASE_SYNC_SENT[no]||lsGet('gs_supabase_sent_'+no)) return;
+  const saved=readPaidSync(no);
+  if(!saved){ console.warn('[school] paid, no cart snapshot to send', no); return; }
+  SUPABASE_SYNC_SENT[no]=1;
+  const body={...saved.payload, order_no:no};
+  delete body.payment_method;
+  try{
+    await api('school-checkout',{method:'POST',body:JSON.stringify(body)});
+    lsSet('gs_supabase_sent_'+no, Date.now());
+    try{ sessionStorage.removeItem('gs_paid_sync'); }catch(e){}
+    lsDel('gs_paid_sync_'+no);
+  }catch(e){
+    delete SUPABASE_SYNC_SENT[no];
+    console.warn('[school] supabase sync after paid', no, e);
+    toast(e.msg||t('errNet'),'bad');
+  }
+}
 function resetPay(){
   PAY_IN_FLIGHT=false;
   document.querySelectorAll('#payMethods .pay-method').forEach(el=>{
@@ -1655,9 +1698,13 @@ async function checkoutAndPay(method){
   if(cached&&cached.sig===sig&&cached.order_no&&(Date.now()-(cached.at||0))<SCH_ORDER_TTL_MS){
     try{
       const st=await fetchOrderStatus(cached.order_no);
-      if(st.status==='paid') return {ord:cached, alreadyPaid:true};
+      if(st.status==='paid'){
+        rememberPaidSync(cached.order_no, checkoutSnapshot(body));
+        return {ord:cached, alreadyPaid:true};
+      }
       if(st.status==='pending'&&hasPaymentSession(cached)){
         cached.payment_method=method;
+        rememberPaidSync(cached.order_no, checkoutSnapshot(body));
         return {ord:cached, alreadyPaid:false, reused:true};
       }
       /* failed/expired (or pending without session): POST again.
@@ -1678,6 +1725,7 @@ async function checkoutAndPay(method){
     throw {code:'SESSION_EMPTY',msg:t('payWidgetErr'),detail:data};
   }
   persistSchOrder(ord);
+  rememberPaidSync(ord.order_no, checkoutSnapshot(body));
   return {ord, alreadyPaid:false, reused:false};
 }
 
@@ -2128,6 +2176,7 @@ async function pollOrderStatus(no){
     /* Paid only from status API — never from ?pay= or other URL flags. */
     renderStatus();
     if(STATUS_POLL_NO!==no) return;
+    if(STATUS.status==='paid') syncPaidOrderToSupabase(STATUS);
     if(STATUS.status==='pending') scheduleStatusPoll(no);
     else stopStatusPoll();
   }catch(e){
