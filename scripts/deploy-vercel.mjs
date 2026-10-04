@@ -12,7 +12,7 @@ import path from "node:path";
 import os from "node:os";
 import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
-import { execFileSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const APP = path.resolve(__dirname, "..");
@@ -22,15 +22,22 @@ const TEAM = "team_yNvyhetiIpDRHbF0N5amFTFj";
 const PROJECT_NAME = "greenola-school-app-new";
 const ALIAS = "greenola-school-app-new.vercel.app";
 
-const authPath = path.join(
-  process.env.HOME,
-  "Library/Application Support/com.vercel.cli/auth.json"
-);
-const token = JSON.parse(fs.readFileSync(authPath, "utf8")).token;
-if (!token) {
-  console.error("No Vercel token in auth.json");
-  process.exit(1);
+function readVercelToken() {
+  const home = process.env.HOME || process.env.USERPROFILE || "";
+  const candidates = [
+    home && path.join(home, "Library/Application Support/com.vercel.cli/auth.json"),
+    process.env.APPDATA && path.join(process.env.APPDATA, "com.vercel.cli/auth.json"),
+    process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, "com.vercel.cli/auth.json"),
+    home && path.join(home, ".local/share/com.vercel.cli/auth.json"),
+  ].filter(Boolean);
+  for (const authPath of candidates) {
+    if (!fs.existsSync(authPath)) continue;
+    const token = JSON.parse(fs.readFileSync(authPath, "utf8")).token;
+    if (token) return token;
+  }
+  return "";
 }
+const token = readVercelToken();
 
 function copyFile(from, to) {
   fs.mkdirSync(path.dirname(to), { recursive: true });
@@ -42,26 +49,31 @@ function stage() {
   fs.mkdirSync(STAGE, { recursive: true });
 
   let html = fs.readFileSync(path.join(APP, "index.html"), "utf8");
-  html = html.replace(
-    '<script src="assets/school-orders-api.js"></script>',
-    '<script>window.SCHOOL_ORDERS_API_BASE="/api/school-orders";</script>\n<script src="assets/school-orders-api.js"></script>'
-  );
-  html = html.replace(
-    "const API=USE_LOCAL_PROXY?API_LOCAL_PROXY:API_REMOTE;",
-    "const API='/api'; /* Vercel: same-origin school-menu proxy */"
-  );
-  if (!html.includes('SCHOOL_ORDERS_API_BASE="/api/school-orders"') || !html.includes("const API='/api'")) {
-    throw new Error("Failed to patch preview HTML for Vercel proxies");
+  const htmlReady = html.includes("ON_VERCEL") && html.includes("'/api'");
+  if (!htmlReady) {
+    html = html.replace(
+      '<script src="assets/school-orders-api.js"></script>',
+      '<script>window.SCHOOL_ORDERS_API_BASE="/api/school-orders";</script>\n<script src="assets/school-orders-api.js"></script>'
+    );
+    html = html.replace(
+      "const API=USE_LOCAL_PROXY?API_LOCAL_PROXY:API_REMOTE;",
+      "const API='/api'; /* Vercel: same-origin school-menu proxy */"
+    );
+    if (!html.includes('SCHOOL_ORDERS_API_BASE="/api/school-orders"') || !html.includes("const API='/api'")) {
+      throw new Error("Failed to patch preview HTML for Vercel proxies");
+    }
   }
   fs.writeFileSync(path.join(STAGE, "index.html"), html);
 
   let orders = fs.readFileSync(path.join(APP, "assets/school-orders-api.js"), "utf8");
-  orders = orders.replace(
-    /var DEFAULT_BASE =\s*"https:\/\/backend\.greenolasa\.com\/api\/v1\/school-orders";/,
-    'var DEFAULT_BASE = "/api/school-orders"; /* Vercel preview proxy */'
-  );
-  if (!orders.includes('DEFAULT_BASE = "/api/school-orders"')) {
-    throw new Error("Failed to patch school-orders-api.js");
+  if (!orders.includes('"/api/school-orders"')) {
+    orders = orders.replace(
+      /var DEFAULT_BASE =\s*"https:\/\/backend\.greenolasa\.com\/api\/v1\/school-orders";/,
+      'var DEFAULT_BASE = "/api/school-orders"; /* Vercel preview proxy */'
+    );
+    if (!orders.includes('DEFAULT_BASE = "/api/school-orders"')) {
+      throw new Error("Failed to patch school-orders-api.js");
+    }
   }
   copyFile(path.join(APP, "assets/payment.css"), path.join(STAGE, "assets/payment.css"));
   copyFile(path.join(APP, "assets/tokens.css"), path.join(STAGE, "assets/tokens.css"));
@@ -84,9 +96,73 @@ function stage() {
   for (const dir of shared) {
     const from = path.join(SIBLING_ASSETS, dir);
     if (!fs.existsSync(from)) continue;
-    execFileSync("rsync", ["-a", from + "/", path.join(STAGE, "assets", dir) + "/"]);
+    fs.cpSync(from, path.join(STAGE, "assets", dir), { recursive: true });
   }
   console.log("staged", STAGE);
+}
+
+const LIVE_ASSETS = [
+  "assets/logos/wordmark-on-dark-green.png",
+  "assets/logos/leaf-e-cream.png",
+  "assets/logos/leaf-e-primary-green.png",
+  "assets/photos/bag-hero.png",
+  "assets/fonts/Cairo-Regular.woff2",
+  "assets/fonts/Cairo-Bold.woff2",
+  "assets/fonts/Cairo-Black.woff2",
+];
+
+function flattenDeploymentFiles(nodes, prefix = "", out = []) {
+  for (const node of nodes || []) {
+    const rel = prefix ? `${prefix}/${node.name}` : node.name;
+    if (node.type === "directory") {
+      if (!node.children || !node.children.length) out.push({ emptyDir: rel });
+      else flattenDeploymentFiles(node.children, rel, out);
+    } else out.push({ file: rel });
+  }
+  return out;
+}
+
+async function preservePriorAssets(projectId) {
+  const list = await api(
+    "GET",
+    `/v6/deployments?projectId=${encodeURIComponent(projectId)}&target=production&limit=1`
+  );
+  const dep = (list.deployments || [])[0];
+  if (!dep) return;
+  const id = dep.uid || dep.id;
+  const tree = await api("GET", `/v6/deployments/${id}/files`);
+  const flat = flattenDeploymentFiles(Array.isArray(tree) ? tree : []);
+  const empty = flat.filter((n) => n.emptyDir && n.emptyDir.startsWith("assets/"));
+  if (empty.length) {
+    throw new Error(`Could not list prior asset files (${empty.map((n) => n.emptyDir).join(", ")})`);
+  }
+  const keep = flat
+    .map((n) => n.file)
+    .filter((rel) => rel && /^assets\/(logos|photos|fonts|dishes)\//.test(rel));
+  const host = String(dep.url || ALIAS).replace(/^https?:\/\//, "");
+  console.log("keeping", keep.length, "assets from previous production deploy");
+  for (const rel of keep) {
+    const dest = path.join(STAGE, rel);
+    if (fs.existsSync(dest)) continue;
+    const res = await fetch(`https://${host}/${rel}`);
+    if (!res.ok) throw new Error(`prior asset ${rel} → ${res.status}`);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
+  }
+}
+
+async function hydrateMissingAssets() {
+  const missing = LIVE_ASSETS.filter((rel) => !fs.existsSync(path.join(STAGE, rel)));
+  if (!missing.length) return;
+  console.log("pulling", missing.length, "assets from", ALIAS);
+  for (const rel of missing) {
+    const res = await fetch(`https://${ALIAS}/${rel}`);
+    if (!res.ok) throw new Error(`asset ${rel} → ${res.status}`);
+    const dest = path.join(STAGE, rel);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.writeFileSync(dest, Buffer.from(await res.arrayBuffer()));
+    console.log(" +", rel);
+  }
 }
 
 function walk(dir, base = dir, out = []) {
@@ -143,8 +219,24 @@ async function uploadFile(rel) {
   throw new Error(`upload ${rel} → ${res.status} ${await res.text()}`);
 }
 
+function deployWithCli() {
+  const scope = "eslamahmedabozeids-projects";
+  const run = (cmd) => {
+    const result = spawnSync(cmd, { cwd: STAGE, stdio: "inherit", shell: true });
+    if (result.status !== 0) process.exit(result.status || 1);
+  };
+  run(`npx --yes vercel link --yes --project ${PROJECT_NAME} --scope ${scope}`);
+  run(`npx --yes vercel deploy --prod --yes --scope ${scope}`);
+}
+
 async function main() {
   stage();
+  await hydrateMissingAssets();
+  if (!token) {
+    console.log("Deploying with the Vercel CLI");
+    deployWithCli();
+    return;
+  }
   const list = await api("GET", `/v9/projects?limit=100&search=${encodeURIComponent(PROJECT_NAME)}`);
   let project = (list.projects || []).find((p) => p.name === PROJECT_NAME);
   if (!project) {
@@ -153,6 +245,7 @@ async function main() {
   } else {
     console.log("project", project.id, project.name);
   }
+  await preservePriorAssets(project.id);
   const files = walk(STAGE);
   console.log("uploading", files.length, "files");
   const uploaded = [];

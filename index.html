@@ -797,7 +797,12 @@ const USE_LOCAL_PROXY=(()=>{
     return /^(localhost|127\.0\.0\.1)$/i.test(location.hostname||'');
   }catch(e){ return false; }
 })();
-const API=USE_LOCAL_PROXY?API_LOCAL_PROXY:API_REMOTE;
+/* Vercel git deploys serve /api/school-menu (same-origin). Other hosts call school-menu directly. */
+const ON_VERCEL=(()=>{
+  try{ return /\.vercel\.app$/i.test(location.hostname||''); }
+  catch(e){ return false; }
+})();
+const API=USE_LOCAL_PROXY?API_LOCAL_PROXY:(ON_VERCEL?'/api':API_REMOTE);
 /* file:// cannot call school-orders. localhost uses /__school-orders (same production API). */
 function localReadonlyActive(){
   return location.protocol==='file:';

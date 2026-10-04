@@ -30,6 +30,8 @@
         /* Same-origin proxy (dev-server.mjs) — browser CORS Origin stays local. */
         return "/__school-orders";
       }
+      /* Vercel git deploys: /api/school-orders (checkout + status). */
+      if (host && /\.vercel\.app$/i.test(host)) return "/api/school-orders";
     } catch (e) {}
     return DEFAULT_BASE;
   }
